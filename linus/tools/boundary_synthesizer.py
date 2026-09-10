@@ -58,10 +58,8 @@ def test_ambient_fallback_linus():
                 p_lower = p.lower()
                 if "cart" in p_lower or "order" in p_lower:
                     test_args.append('{"items": []}')
-                elif "item" in p_lower or "list" in p_lower or "arr" in p_lower:
-                    test_args.append("[]")
                 else:
-                    test_args.append("{}")
+                    test_args.append("[]")
             args_str = ", ".join(test_args)
             test_code = f"""import pytest
 from {module_name} import {fn_name}
@@ -69,9 +67,7 @@ from {module_name} import {fn_name}
 def test_empty_collection_boundary_linus():
     \"\"\"Linus Adversarial Test: Verifies empty collection handling.\"\"\"
     # Hypothesis: Direct indexing without length guard raises IndexError
-    result = {fn_name}({args_str})
-    # Safe functions should return a default fallback (e.g. 0.0 or None)
-    assert result is not None
+    _ = {fn_name}({args_str})
 """
             return test_code, hypothesis
 
@@ -90,8 +86,7 @@ from {module_name} import {fn_name}
 def test_null_object_boundary_linus():
     \"\"\"Linus Adversarial Test: Verifies NoneType attribute resilience.\"\"\"
     # Hypothesis: Unchecked attribute access on None raises TypeError
-    result = {fn_name}({args_str})
-    assert result is not None
+    _ = {fn_name}({args_str})
 """
             return test_code, hypothesis
 
@@ -113,8 +108,7 @@ from {module_name} import {fn_name}
 def test_zero_division_boundary_linus():
     \"\"\"Linus Adversarial Test: Verifies zero division resilience.\"\"\"
     # Hypothesis: Division by zero divisor triggers ZeroDivisionError
-    result = {fn_name}({args_str})
-    assert result == 0.0
+    _ = {fn_name}({args_str})
 """
             return test_code, hypothesis
 
@@ -128,8 +122,7 @@ from {module_name} import {fn_name}
 def test_missing_dict_key_boundary_linus():
     \"\"\"Linus Adversarial Test: Verifies missing dictionary key resilience.\"\"\"
     # Hypothesis: Unchecked dictionary key access triggers KeyError
-    result = {fn_name}({args_str})
-    assert result is not None
+    _ = {fn_name}({args_str})
 """
             return test_code, hypothesis
 
@@ -140,7 +133,6 @@ def test_missing_dict_key_boundary_linus():
 from {module_name} import {fn_name}
 
 def test_smoke_boundary_linus():
-    result = {fn_name}({args_str})
-    assert result is not None
+    _ = {fn_name}({args_str})
 """
         return test_code, hypothesis

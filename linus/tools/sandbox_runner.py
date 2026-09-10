@@ -159,7 +159,9 @@ class SandboxTestRunner:
             except ValueError:
                 pass
 
-        if exc_type == "AssertionError":
+        if "E   assert" in combined or "AssertionError" in combined:
+            exc_type = "AssertionError"
+            exc_msg = "Assertion failed"
             status = TestStatus.FAIL_ASSERTION
         elif exc_type:
             status = TestStatus.UNCAUGHT_EXCEPTION
