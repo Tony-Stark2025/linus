@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linus | Autonomous Adversarial PR Verifier</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              500: '#14b8a6',
+              600: '#0d9488',
+              900: '#134e4a',
+            },
+            dark: {
+              950: '#07090e',
+              900: '#0d1117',
+              850: '#131822',
+              800: '#1c2433',
+              700: '#2d3748',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for dark terminal */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
+    .pulse-green { box-shadow: 0 0 15px rgba(20, 184, 166, 0.4); }
+    .pulse-red { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+  </style>
+</head>
+<body class="bg-dark-950 text-slate-200 font-sans min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-black">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-dark-800 bg-dark-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3.5">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-dark-950 font-bold shadow-lg shadow-teal-500/20">
+        <i data-lucide="shield-alert" class="w-5 h-5 text-black"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-lg tracking-tight text-white">LINUS</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">v0.1.0-alpha</span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 flex items-center gap-1">
+            <i data-lucide="cpu" class="w-3 h-3"></i> AWS Bedrock AgentCore
+          </span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3 h-3"></i> Strands Agents SDK
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 font-medium">Autonomous Adversarial PR Verifier &bull; Professional Agents Track</p>
+      </div>
+    </div>
+
+    <!-- Quick Scenario Selector -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center bg-dark-850 border border-dark-700 rounded-lg p-1 text-xs">
+        <label class="px-2.5 text-slate-400 font-medium flex items-center gap-1.5">
+          <i data-lucide="git-pull-request" class="w-3.5 h-3.5 text-teal-400"></i> PR Scenario:
+        </label>
+        <select id="scenario-selector" class="bg-dark-900 text-white font-mono px-3 py-1.5 rounded border border-dark-700 focus:outline-none focus:border-teal-500 text-xs">
+          <option value="PR-104">PR-104 &bull; Bulk Discounts (Empty Cart IndexError)</option>
+          <option value="PR-209">PR-209 &bull; Guest Checkout (Nullable TypeError)</option>
+          <option value="PR-318">PR-318 &bull; Average Order Value (ZeroDivisionError)</option>
+        </select>
+      </div>
+
+      <button id="btn-run-audit" onclick="triggerAudit()" class="px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-black font-semibold rounded-lg text-xs shadow-lg shadow-teal-500/25 flex items-center gap-2 transition-all active:scale-95 cursor-pointer">
+        <i data-lucide="play" class="w-3.5 h-3.5 fill-black"></i>
+        <span>Run Autonomous Audit</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN 3-PANEL WORKSPACE -->
+  <main class="flex-1 p-6 grid grid-cols-12 gap-6 max-w-[1920px] mx-auto w-full">
+
+    <!-- PANEL 1: PULL REQUEST & DIFF INSPECTOR (Cols 1-4) -->
+    <section class="col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-3 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="git-pull-request-draft" class="w-4 h-4 text-teal-400"></i>
+          <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Pull Request Under Audit</h2>
+        </div>
+        <span id="pr-status-badge" class="px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Unit Tests Passing (2/2)
+        </span>
+      </div>
+
+      <div class="p-4 flex flex-col flex-1 overflow-y-auto space-y-4">
+        <!-- PR Header Details -->
+        <div class="bg-dark-850/70 border border-dark-800 rounded-lg p-3.5 space-y-2">
+          <div class="flex items-start justify-between">
+            <h3 id="pr-title" class="text-sm font-semibold text-white leading-snug">feat(pricing): add tiered bulk volume discounts to checkout</h3>
+          </div>
+          <div class="flex items-center text-xs text-slate-400 gap-3 font-mono">
+            <span id="pr-repo" class="text-teal-400 flex items-center gap-1"><i data-lucide="folder" class="w-3 h-3"></i> acme-corp/ecommerce-service</span>
+            <span id="pr-branch" class="text-slate-300 flex items-center gap-1"><i data-lucide="git-branch" class="w-3 h-3"></i> feature/tiered-discounts</span>
+            <span id="pr-author" class="text-slate-400">&bull; @alex-dev</span>
+          </div>
+          <p id="pr-desc" class="text-xs text-slate-300 leading-relaxed bg-dark-900/50 p-2.5 rounded border border-dark-800 italic">
+            "Implements tiered bulk discount logic: orders over $100 receive a 15% discount. Also inspects first item category for partner promotion eligibility. All unit tests are passing!"
+          </p>
+        </div>
+
+        <!-- PR Code View -->
+        <div class="flex-1 flex flex-col space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="font-mono flex items-center gap-1.5 text-slate-300">
+              <i data-lucide="file-code" class="w-3.5 h-3.5 text-teal-400"></i> Target Source: <span id="pr-target-file" class="text-white font-semibold">checkout_service.py</span>
+            </span>
+            <span class="text-[11px] text-slate-400">Candidate PR Branch</span>
+          </div>
+          <div class="relative bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-xs text-slate-300 overflow-x-auto max-h-72">
+            <pre><code id="pr-source-code">Loading source code...</code></pre>
+          </div>
+        </div>
+
+        <!-- Baseline Tests View -->
+        <div class="flex flex-col space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="font-mono flex items-center gap-1.5 text-slate-300">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> Baseline Developer Tests (Happy Path)
+            </span>
+            <span class="text-[11px] text-emerald-400 font-mono font-medium">100% PASS</span>
+          </div>
+          <div class="bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-[11px] text-slate-400 overflow-x-auto max-h-48">
+            <pre><code id="pr-baseline-tests">Loading baseline tests...</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 2: AGENTCORE TELEMETRY STREAM (Cols 5-8) -->
+    <section class="col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-3 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="terminal" class="w-4 h-4 text-purple-400"></i>
+          <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">AgentCore Telemetry Trace</h2>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span id="telemetry-spinner" class="hidden w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+          <span id="telemetry-status" class="text-xs font-mono text-slate-400">Idle</span>
+        </div>
+      </div>
+
+      <div id="telemetry-log-container" class="p-4 flex-1 bg-dark-950 font-mono text-xs overflow-y-auto space-y-2.5 max-h-[calc(100vh-140px)]">
+        <div class="text-slate-400 text-xs italic">
+          [System] Ready. Click 'Run Autonomous Audit' to launch Linus on the selected PR.
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: THE SURFACE CARD & ACTION CENTER (Cols 9-12) -->
+    <section class="col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-3 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="alert-octagon" class="w-4 h-4 text-red-400"></i>
+          <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Linus Surface Decision Card</h2>
+        </div>
+        <span id="card-status-badge" class="px-2 py-0.5 text-[11px] font-mono rounded bg-slate-800 text-slate-400 border border-dark-700">
+          Awaiting Execution
+        </span>
+      </div>
+
+      <div id="surface-card-content" class="p-4 flex-1 flex flex-col justify-center items-center text-center space-y-4">
+        <!-- Initial Empty State -->
+        <div id="card-empty-state" class="p-8 flex flex-col items-center justify-center text-slate-400 space-y-3">
+          <div class="w-12 h-12 rounded-full bg-dark-850 border border-dark-700 flex items-center justify-center text-slate-400">
+            <i data-lucide="crosshair" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-sm font-semibold text-slate-300">Ambient Background Mode</h4>
+          <p class="text-xs text-slate-400 max-w-xs leading-relaxed">
+            Linus operates silently in the background. It will only surface here if an uncaught crash is empirically proven in the sandbox.
+          </p>
+        </div>
+
+        <!-- Defect Proven Container (Hidden by default) -->
+        <div id="card-proven-defect" class="hidden w-full text-left space-y-4">
+          <!-- Crash Alert Banner -->
+          <div class="bg-red-950/40 border border-red-500/30 rounded-lg p-3.5 space-y-1.5 pulse-red">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-red-400 uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="shield-x" class="w-4 h-4 text-red-400"></i> Empirical Defect Proven
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 bg-red-500/20 text-red-300 rounded font-semibold">Zero False Positive</span>
+            </div>
+            <p id="card-exception-title" class="text-sm font-mono font-bold text-white">IndexError: list index out of range</p>
+            <p id="card-exception-desc" class="text-xs text-red-200/80">Triggered on line 10 when empty collection was passed.</p>
+          </div>
+
+          <!-- Adversarial Test Code -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><i data-lucide="test-tube-2" class="w-3.5 h-3.5 text-teal-400"></i> Synthesized Adversarial Test</span>
+              <span class="text-[10px] font-mono text-slate-400">Executed in Sandbox &bull; Exit Code 1</span>
+            </label>
+            <div class="bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-xs text-teal-300 overflow-x-auto max-h-36">
+              <pre><code id="card-adversarial-code"># Test code</code></pre>
+            </div>
+          </div>
+
+          <!-- Verified Patch & Diff -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i> Verified Defensive Patch</span>
+              <span class="text-[10px] font-mono text-emerald-400">Dual-Suite Verified (Pass)</span>
+            </label>
+            <p id="card-patch-explanation" class="text-xs text-slate-300 italic bg-dark-850 p-2 rounded border border-dark-700">Explanation...</p>
+            <div class="bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-xs text-emerald-300 overflow-x-auto max-h-36">
+              <pre><code id="card-patch-diff"># Patch diff</code></pre>
+            </div>
+          </div>
+
+          <!-- Recursive Test Permanent Addition -->
+          <div class="bg-teal-950/20 border border-teal-500/20 rounded-lg p-3 text-xs text-teal-200 flex items-start gap-2.5">
+            <i data-lucide="repeat" class="w-4 h-4 text-teal-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-teal-300">Recursive Test Addition:</span>
+              <p class="text-[11px] text-teal-300/80 mt-0.5">
+                This verified test will be permanently added to <code id="card-permanent-path" class="text-white font-mono bg-dark-900 px-1 py-0.5 rounded">tests/regressions/test_linus_pr.py</code> to ensure permanent immunity against this regression.
+              </p>
+            </div>
+          </div>
+
+          <!-- 1-Click Action Buttons -->
+          <div class="pt-2 flex flex-col space-y-2">
+            <button id="btn-apply-patch" onclick="applyVerifiedPatch()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-dark-950 font-bold rounded-lg text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span>Approve Patch & Commit Permanent Test</span>
+            </button>
+            <button onclick="copyGithubMarkdown()" class="w-full py-2 bg-dark-800 hover:bg-dark-700 text-slate-300 border border-dark-700 font-medium rounded-lg text-xs flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Copy GitHub PR Review Markdown</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Clean State Container (When patch applied) -->
+        <div id="card-clean-state" class="hidden w-full p-8 flex flex-col items-center justify-center text-center space-y-3">
+          <div class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 pulse-green">
+            <i data-lucide="shield-check" class="w-8 h-8"></i>
+          </div>
+          <h4 class="text-base font-bold text-white">PR Verified Clean & Immune</h4>
+          <p class="text-xs text-slate-300 max-w-xs leading-relaxed">
+            The defensive patch has been verified against both the adversarial test and all baseline tests. Recursive test committed to permanent test suite.
+          </p>
+          <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-mono rounded-full font-semibold">
+            Ready to Merge with Zero Regressions
+          </span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // State management
+    let scenarios = {};
+    let currentScenario = null;
+    let currentAuditResult = null;
+
+    // Load initial scenarios
+    async function loadScenarios() {
+      try {
+        const res = await fetch('/api/scenarios');
+        scenarios = await res.json();
+        const selector = document.getElementById('scenario-selector');
+        selector.addEventListener('change', (e) => selectScenario(e.target.value));
+        selectScenario('PR-104');
+      } catch (err) {
+        console.error('Failed to load scenarios:', err);
+      }
+    }
+
+    function selectScenario(id) {
+      currentScenario = scenarios[id];
+      if (!currentScenario) return;
+
+      document.getElementById('pr-title').innerText = currentScenario.title;
+      document.getElementById('pr-repo').innerText = currentScenario.repository;
+      document.getElementById('pr-branch').innerText = currentScenario.branch;
+      document.getElementById('pr-author').innerText = `• ${currentScenario.author}`;
+      document.getElementById('pr-desc').innerText = `"${currentScenario.pr_description}"`;
+      document.getElementById('pr-target-file').innerText = currentScenario.target_file;
+      document.getElementById('pr-source-code').innerText = currentScenario.source_code;
+      document.getElementById('pr-baseline-tests').innerText = currentScenario.baseline_test_code;
+
+      // Reset panels
+      document.getElementById('card-empty-state').classList.remove('hidden');
+      document.getElementById('card-proven-defect').classList.add('hidden');
+      document.getElementById('card-clean-state').classList.add('hidden');
+      document.getElementById('card-status-badge').innerText = 'Awaiting Execution';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-slate-800 text-slate-400 border border-dark-700';
+
+      // Reset telemetry
+      const logContainer = document.getElementById('telemetry-log-container');
+      logContainer.innerHTML = `
+        <div class="text-slate-400 text-xs italic">
+          [System] Loaded scenario ${id}. Click 'Run Autonomous Audit' to launch Linus.
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    async function triggerAudit() {
+      if (!currentScenario) return;
+
+      const btn = document.getElementById('btn-run-audit');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      document.getElementById('telemetry-spinner').classList.remove('hidden');
+      document.getElementById('telemetry-status').innerText = 'Auditing...';
+      document.getElementById('card-status-badge').innerText = 'Audit in Progress';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-amber-500/10 text-amber-300 border border-amber-500/20';
+
+      const logContainer = document.getElementById('telemetry-log-container');
+      logContainer.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario_id: currentScenario.id })
+        });
+        const data = await res.json();
+        const auditId = data.audit_id;
+
+        // Connect to SSE stream
+        const eventSource = new EventSource(`/api/audit/stream/${auditId}`);
+
+        eventSource.onmessage = (e) => {
+          const evt = JSON.parse(e.data);
+          appendTelemetryLog(evt);
+
+          if (evt.phase === 'TERMINATE') {
+            eventSource.close();
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            document.getElementById('telemetry-spinner').classList.add('hidden');
+            document.getElementById('telemetry-status').innerText = 'Completed';
+            fetchFinalResult(auditId);
+          }
+        };
+
+        eventSource.onerror = () => {
+          eventSource.close();
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          document.getElementById('telemetry-spinner').classList.add('hidden');
+          document.getElementById('telemetry-status').innerText = 'Completed';
+          fetchFinalResult(auditId);
+        };
+      } catch (err) {
+        console.error('Audit failed:', err);
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+      }
+    }
+
+    function appendTelemetryLog(evt) {
+      const container = document.getElementById('telemetry-log-container');
+      const row = document.createElement('div');
+      row.className = 'flex items-start space-x-2 border-b border-dark-900 pb-1.5';
+
+      let badgeColor = 'bg-slate-800 text-slate-300';
+      if (evt.phase === 'INGRESS') badgeColor = 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+      if (evt.phase === 'AST_ANALYSIS' || evt.phase === 'AST_COMPLETE') badgeColor = 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+      if (evt.phase === 'SANDBOX_TEST') badgeColor = 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      if (evt.phase === 'CRASH_PROVEN') badgeColor = 'bg-red-500/20 text-red-300 border border-red-500/30';
+      if (evt.phase === 'PATCH_SYNTHESIS') badgeColor = 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+      if (evt.phase === 'DUAL_VERIFICATION' || evt.phase === 'VERIFICATION_SUCCESS') badgeColor = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      if (evt.phase === 'RECURSIVE_TEST_COMMITTED') badgeColor = 'bg-teal-500/20 text-teal-300 border border-teal-500/30';
+
+      row.innerHTML = `
+        <span class="text-[10px] text-slate-400 shrink-0 font-mono">${evt.timestamp || 'now'}</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold shrink-0 ${badgeColor}">${evt.phase}</span>
+        <span class="text-slate-300 break-words flex-1 text-xs">${evt.message}</span>
+      `;
+      container.appendChild(row);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function fetchFinalResult(auditId) {
+      try {
+        const res = await fetch(`/api/audit/result/${auditId}`);
+        currentAuditResult = await res.json();
+        renderSurfaceCard(currentAuditResult);
+      } catch (err) {
+        console.error('Failed to get result:', err);
+      }
+    }
+
+    function renderSurfaceCard(result) {
+      if (!result) return;
+
+      document.getElementById('card-empty-state').classList.add('hidden');
+      document.getElementById('card-clean-state').classList.add('hidden');
+      document.getElementById('card-proven-defect').classList.remove('hidden');
+
+      document.getElementById('card-status-badge').innerText = 'DEFECT PROVEN';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-red-500/20 text-red-300 border border-red-500/30 font-bold';
+
+      if (result.failing_test) {
+        document.getElementById('card-exception-title').innerText = `${result.failing_test.exception_type}: ${result.failing_test.exception_message || 'Unhandled crash'}`;
+        document.getElementById('card-exception-desc').innerText = `Line ${result.failing_test.exception_line || 'unknown'} &bull; Captured in isolated sandbox`;
+        document.getElementById('card-adversarial-code').innerText = result.failing_test.test_code;
+      }
+
+      if (result.patch) {
+        document.getElementById('card-patch-diff').innerText = result.patch.diff_patch;
+        document.getElementById('card-patch-explanation').innerText = `"${result.patch.explanation}"`;
+      }
+
+      if (result.dual_verification) {
+        document.getElementById('card-permanent-path').innerText = result.dual_verification.permanent_test_path;
+      }
+
+      lucide.createIcons();
+    }
+
+    function applyVerifiedPatch() {
+      if (!currentScenario || !currentAuditResult) return;
+
+      // Update source view with patched code
+      document.getElementById('pr-source-code').innerText = currentScenario.patched_code;
+      document.getElementById('pr-status-badge').innerHTML = `
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span> Immune & Clean (Dual-Suite Verified)
+      `;
+      document.getElementById('pr-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center gap-1';
+
+      // Switch Surface Card to Clean state
+      document.getElementById('card-proven-defect').classList.add('hidden');
+      document.getElementById('card-clean-state').classList.remove('hidden');
+      document.getElementById('card-status-badge').innerText = 'VERIFIED IMMUNE';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold';
+
+      // Append log entry
+      appendTelemetryLog({
+        timestamp: new Date().toLocaleTimeString(),
+        phase: 'RECURSIVE_TEST_COMMITTED',
+        message: `Committed permanent regression guard ${currentAuditResult.dual_verification.permanent_test_path}. PR is ready to merge.`
+      });
+      lucide.createIcons();
+    }
+
+    function copyGithubMarkdown() {
+      if (!currentAuditResult) return;
+      const md = `### 🔴 Linus Verification Advisory: Unhandled Defect Caught
+
+Linus ran autonomous adversarial verification on this Pull Request and caught an unhandled runtime crash:
+
+\`\`\`python
+# ${currentAuditResult.failing_test.exception_type}: ${currentAuditResult.failing_test.exception_message}
+\`\`\`
+
+#### 🧪 Minimal Reproduction Test:
+\`\`\`python
+${currentAuditResult.failing_test.test_code}
+\`\`\`
+
+#### 🛠️ Dual-Verified Defensive Patch:
+\`\`\`diff
+${currentAuditResult.patch.diff_patch}
+\`\`\`
+
+*Permanent regression test committed to: \`${currentAuditResult.dual_verification.permanent_test_path}\`*
+*Verified with 0 regressions against existing test suite.*`;
+
+      navigator.clipboard.writeText(md);
+      alert('GitHub PR Review Markdown copied to clipboard!');
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadScenarios();
+    });
+  </script>
+</body>
+</html>

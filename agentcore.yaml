@@ -1,0 +1,99 @@
+# Amazon Bedrock AgentCore Deployment Configuration
+# Product: Linus - Autonomous Adversarial PR Verifier
+# Framework: Strands Agents SDK (strands-agents >= 1.55.0)
+# Target Track: AWS Agents for Humans Hackathon - Track 2: Professional Agents
+
+version: "2026-03"
+agent:
+  name: "linus-adversarial-verifier"
+  displayName: "Linus Autonomous Adversarial PR Verifier"
+  description: >
+    Autonomous enterprise agent that operates silently in the background on pull requests.
+    Synthesizes boundary-value adversarial tests against AST-identified structural risks,
+    executes them in an isolated subprocess sandbox, and only surfaces when an unhandled
+    runtime crash is empirically proven with zero false positives.
+  
+  # Amazon Bedrock Foundation Model
+  foundationModel: "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-7-sonnet-20250219-v1:0"
+  fallbackModel: "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0"
+  
+  runtime:
+    type: "STRANDS_AGENT_CORE"
+    engine: "python3.14"
+    entrypoint: "linus.agent:LinusAgent"
+    handler: "audit_pull_request"
+    timeoutSeconds: 180
+    maxIterations: 6
+
+  # AgentCore Memory & State Retention
+  memory:
+    enabled: true
+    type: "SESSION_SUMMARY_AND_CODE_REPOSITORY"
+    ttlSeconds: 86400
+    dynamodbTable: "LinusAgentCoreMemoryStore"
+    vectorStore:
+      provider: "opensearch_serverless"
+      index: "linus-regression-memory"
+
+  # Registered Deterministic & Dynamic Tools
+  tools:
+    - name: "inspect_ast_risks"
+      description: "Deterministic AST parser detecting risk vectors (empty collections, unchecked None, zero division, KeyError)."
+      module: "linus.tools.ast_inspector"
+      function: "inspect_ast_risks"
+      deterministic: true
+      cacheable: true
+
+    - name: "run_test_in_sandbox"
+      description: "Executes adversarial or regression pytest suite in an isolated sandbox with resource & timeout guards."
+      module: "linus.tools.sandbox_runner"
+      function: "run_test_in_sandbox"
+      timeoutMs: 15000
+      isolation: "CONTAINER_SUBPROCESS"
+
+    - name: "verify_patch_dual_suite"
+      description: "Dual-suite regression verifier ensuring candidate patch passes both the adversarial reproduction and the original baseline suite."
+      module: "linus.tools.patch_verifier"
+      function: "verify_patch_dual_suite"
+      deterministic: true
+
+  # Guardrails & Zero-False-Positive Execution Gate
+  guardrails:
+    assuredExecutionGate:
+      enabled: true
+      enforceCrashProof: true
+      requireExitCodeNonZero: true
+      requireExceptionTraceback: true
+      blockUnverifiedComments: true
+    contentSafety:
+      filterPII: false
+      maskSecrets: true
+
+  # AWS Observability & Telemetry Streaming
+  observability:
+    cloudWatchLogs:
+      enabled: true
+      logGroupName: "/aws/bedrock/agentcore/linus-verifier"
+      retentionDays: 30
+    xRayTracing:
+      enabled: true
+    eventBridge:
+      enabled: true
+      busName: "default"
+      eventSource: "linus.agent.telemetry"
+    streaming:
+      protocol: "SSE"
+      heartbeatIntervalSeconds: 5
+
+  # Infrastructure & Container Spec
+  deployment:
+    platform: "AWS_AGENTCORE_SERVERLESS"
+    resources:
+      cpu: "2 vCPU"
+      memory: "4096 MiB"
+      ephemeralStorage: "10 GiB"
+    environment:
+      STRANDS_LOG_LEVEL: "INFO"
+      LINUS_SANDBOX_TIMEOUT: "10"
+      LINUS_RECURSIVE_TEST_DIR: "tests/regressions"
+      AWS_DEFAULT_REGION: "us-east-1"
