@@ -84,12 +84,13 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
         patch = req.custom_patch
         expl = "Custom user submitted patch"
 
+    main_loop = asyncio.get_running_loop()
+
     def telemetry_callback(event: Dict[str, Any]):
-        # Schedule message put into the async queue safely
+        # Schedule message put into the async queue safely from worker thread
         try:
-            loop = asyncio.get_running_loop()
-            loop.call_soon_threadsafe(queue.put_nowait, event)
-        except RuntimeError:
+            main_loop.call_soon_threadsafe(queue.put_nowait, event)
+        except Exception:
             pass
 
     def run_agent_job():
@@ -131,6 +132,12 @@ async def download_regression_test(audit_id: str):
 async def stream_telemetry(audit_id: str):
     """Streams real-time AgentCore telemetry events via Server-Sent Events (SSE)."""
     if audit_id not in ACTIVE_STREAMS:
+        if audit_id in AUDIT_RESULTS:
+            async def replay_generator():
+                for evt in AUDIT_RESULTS[audit_id].get("telemetry_trace", []):
+                    yield f"data: {json.dumps(evt)}\n\n"
+                yield f"data: {json.dumps({'phase': 'TERMINATE', 'message': 'Audit completed.'})}\n\n"
+            return StreamingResponse(replay_generator(), media_type="text/event-stream")
         return JSONResponse(status_code=404, content={"error": "Audit stream not found"})
 
     queue = ACTIVE_STREAMS[audit_id]
@@ -138,7 +145,10 @@ async def stream_telemetry(audit_id: str):
     async def event_generator():
         try:
             while True:
-                event = await queue.get()
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=15.0)
+                except asyncio.TimeoutError:
+                    break
                 yield f"data: {json.dumps(event)}\n\n"
                 if event.get("phase") == "TERMINATE":
                     break
