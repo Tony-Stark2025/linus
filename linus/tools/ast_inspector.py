@@ -17,8 +17,9 @@ from linus.models import (
 class RiskVisitor(ast.NodeVisitor):
     """AST visitor to detect structural edge-case risk vectors."""
 
-    def __init__(self):
+    def __init__(self, param_names: Optional[List[str]] = None):
         self.risk_vectors: List[RiskVectorType] = []
+        self.param_names = set(param_names or [])
 
     def visit_Subscript(self, node: ast.Subscript):
         # Check for direct integer indexing, e.g. items[0]
@@ -44,8 +45,10 @@ class RiskVisitor(ast.NodeVisitor):
             if RiskVectorType.NULLABLE_ATTRIBUTE_ACCESS not in self.risk_vectors:
                 self.risk_vectors.append(RiskVectorType.NULLABLE_ATTRIBUTE_ACCESS)
         elif isinstance(node.value, ast.Name):
-            # Check for common nullable patterns like user.tier
-            if node.value.id in ("user", "profile", "customer", "config", "session", "promo", "discount"):
+            # Check if accessing attribute on a function parameter or common nullable patterns
+            if node.value.id in self.param_names or node.value.id in (
+                "user", "profile", "customer", "config", "session", "promo", "discount", "account", "record", "data", "client"
+            ):
                 if RiskVectorType.NULLABLE_ATTRIBUTE_ACCESS not in self.risk_vectors:
                     self.risk_vectors.append(RiskVectorType.NULLABLE_ATTRIBUTE_ACCESS)
         self.generic_visit(node)
@@ -99,7 +102,8 @@ def inspect_source_ast(source_code: str, file_path: str = "source.py") -> ASTAna
             docstring = ast.get_docstring(node)
 
             # Analyze function body for risk vectors
-            visitor = RiskVisitor()
+            param_names = [p.name for p in params]
+            visitor = RiskVisitor(param_names=param_names)
             visitor.visit(node)
 
             functions.append(FunctionSignature(

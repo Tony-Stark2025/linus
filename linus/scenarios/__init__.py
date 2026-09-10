@@ -221,8 +221,76 @@ def compute_average_order_value(total_revenue: float, total_orders: int) -> floa
 }
 
 
+SCENARIO_SOUND_PAYMENT_GATEWAY = {
+    "id": "PR-401",
+    "title": "feat(payments): resilient payment intent processor with defensive null guards",
+    "author": "@marcus-core",
+    "repository": "fintech-corp/payments-core",
+    "branch": "feature/resilient-payment-intent",
+    "target_file": "payment_processor.py",
+    "pr_description": (
+        "Implements payment intent processing with defensive guards for null accounts, "
+        "empty metadata, and zero amounts. Thoroughly guarded against edge-case crashes."
+    ),
+    "source_code": '''"""
+Resilient Payment Intent Processor.
+"""
+from typing import Dict, Any, Optional
+
+def process_payment_intent(account: Optional[Dict[str, Any]], amount_cents: int) -> Dict[str, Any]:
+    """Processes payment intent safely with defensive checks."""
+    if not account:
+        return {"status": "REJECTED", "reason": "ACCOUNT_MISSING", "fee": 0.0}
+        
+    if amount_cents <= 0:
+        return {"status": "REJECTED", "reason": "INVALID_AMOUNT", "fee": 0.0}
+
+    tier = account.get("tier", "standard")
+    fee_rate = 0.025 if tier == "pro" else 0.035
+    fee = round((amount_cents / 100.0) * fee_rate, 2)
+
+    return {
+        "status": "APPROVED",
+        "account_id": account.get("id", "unknown"),
+        "amount_cents": amount_cents,
+        "fee": fee,
+    }
+''',
+    "baseline_test_code": '''import pytest
+from payment_processor import process_payment_intent
+
+def test_standard_payment():
+    account = {"id": "acc-1", "tier": "standard"}
+    res = process_payment_intent(account, 10000)
+    assert res["status"] == "APPROVED"
+    assert res["fee"] == 3.50
+
+def test_pro_payment():
+    account = {"id": "acc-2", "tier": "pro"}
+    res = process_payment_intent(account, 10000)
+    assert res["status"] == "APPROVED"
+    assert res["fee"] == 2.50
+''',
+    "adversarial_test_code": '''import pytest
+from payment_processor import process_payment_intent
+
+def test_null_account_and_zero_amount_linus():
+    """Linus Adversarial Test: Boundary conditions for null account and zero amount."""
+    # Both boundary conditions should be handled cleanly with zero unhandled exceptions
+    res1 = process_payment_intent(None, 5000)
+    assert res1["status"] == "REJECTED"
+    
+    res2 = process_payment_intent({"id": "acc-1"}, 0)
+    assert res2["status"] == "REJECTED"
+''',
+    "patched_code": None,
+    "explanation": "Code is already defensively guarded against boundary states. Zero defects proven; Linus remains ambient and silent.",
+}
+
+
 ALL_SCENARIOS = {
     "PR-104": SCENARIO_CHECKOUT_DISCOUNT,
     "PR-209": SCENARIO_GUEST_SUBSCRIPTION,
     "PR-318": SCENARIO_FINANCIAL_AOV,
+    "PR-401": SCENARIO_SOUND_PAYMENT_GATEWAY,
 }

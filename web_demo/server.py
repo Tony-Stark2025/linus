@@ -9,7 +9,7 @@ import uuid
 from typing import Dict, Any, Optional
 from pathlib import Path
 from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -79,7 +79,7 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
         repo = "custom/user-repo"
         source = req.custom_source or ""
         filename = req.custom_filename or "service.py"
-        adv_test = req.custom_test or ""
+        adv_test = req.custom_test if (req.custom_test and req.custom_test.strip()) else None
         base_test = None
         patch = req.custom_patch
         expl = "Custom user submitted patch"
@@ -109,6 +109,22 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
 
     background_tasks.add_task(run_agent_job)
     return {"audit_id": audit_id, "status": "QUEUED"}
+
+
+@app.get("/api/download/test/{audit_id}")
+async def download_regression_test(audit_id: str):
+    """Downloads the verified regression test as a standalone .py file."""
+    if audit_id in AUDIT_RESULTS:
+        res = AUDIT_RESULTS[audit_id]
+        if res.get("failing_test") and res["failing_test"].get("test_code"):
+            test_content = res["failing_test"]["test_code"]
+            pr_id = res.get("pr_id", "pr").replace("-", "_").lower()
+            return Response(
+                content=test_content,
+                media_type="text/x-python",
+                headers={"Content-Disposition": f"attachment; filename=test_linus_{pr_id}.py"},
+            )
+    return JSONResponse(status_code=404, content={"error": "Test not found for audit"})
 
 
 @app.get("/api/audit/stream/{audit_id}")
