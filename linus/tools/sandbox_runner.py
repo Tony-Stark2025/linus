@@ -65,7 +65,17 @@ class SandboxTestRunner:
                 str(test_file.name),
             ]
 
-            env = os.environ.copy()
+            # Build a sanitized execution environment (strip sensitive host credentials)
+            env = {
+                k: v for k, v in os.environ.items()
+                if not any(
+                    s in k.upper()
+                    for s in (
+                        "AWS_", "GITHUB_", "SECRET", "PASSWORD", "TOKEN",
+                        "API_KEY", "PRIVATE_KEY", "CREDENTIALS", "ACCESS_KEY"
+                    )
+                )
+            }
             env["PYTHONPATH"] = str(sandbox_path)
             env["PYTHONDONTWRITEBYTECODE"] = "1"
 
@@ -182,3 +192,27 @@ class SandboxTestRunner:
         stack_trace = "\n".join(tb_lines) if tb_lines else combined
 
         return status, exc_type, exc_msg, exc_line, stack_trace
+
+
+def run_test_in_sandbox(
+    source_code: str,
+    test_code: str,
+    source_filename: str = "service.py",
+    test_filename: str = "test_adversarial.py",
+    timeout_seconds: Optional[int] = None,
+    extra_files: Optional[Dict[str, str]] = None,
+) -> TestExecutionResult:
+    """
+    Top-level helper function matching Amazon Bedrock AgentCore action group declaration.
+    Executes test_code against source_code in an isolated temporary sandbox.
+    """
+    runner = SandboxTestRunner(default_timeout_seconds=timeout_seconds or 15)
+    return runner.execute_test(
+        source_code=source_code,
+        test_code=test_code,
+        source_filename=source_filename,
+        test_filename=test_filename,
+        timeout_seconds=timeout_seconds,
+        extra_files=extra_files,
+    )
+

@@ -122,3 +122,8 @@ def inspect_source_ast(source_code: str, file_path: str = "source.py") -> ASTAna
         total_lines=len(source_code.splitlines()),
         raw_source=source_code,
     )
+
+
+# Compatibility alias for Amazon Bedrock AgentCore action groups and documentation
+inspect_ast_risks = inspect_source_ast
+

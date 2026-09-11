@@ -102,3 +102,54 @@ class DualRegressionVerifier:
             permanent_test_path=perm_path,
             details="Dual verification successful: defect resolved and zero regressions introduced.",
         )
+
+    def commit_permanent_test(
+        self,
+        permanent_test_path: str,
+        test_code: str,
+        base_dir: Optional[Path] = None,
+    ) -> Path:
+        """Writes permanent regression test to disk."""
+        return commit_permanent_test(permanent_test_path, test_code, base_dir=base_dir)
+
+
+def commit_permanent_test(
+    permanent_test_path: str,
+    test_code: str,
+    base_dir: Optional[Path] = None,
+) -> Path:
+    """
+    Physically writes the verified reproduction test to disk (Recursive Test Addition),
+    permanently immunizing the repository against regressions.
+    """
+    root = base_dir or Path.cwd()
+    target_path = root / permanent_test_path
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(test_code, encoding="utf-8")
+    return target_path
+
+
+def verify_patch_dual_suite(
+    original_code: str,
+    patched_code: str,
+    adversarial_test_code: str,
+    baseline_test_code: Optional[str] = None,
+    source_filename: str = "service.py",
+    pr_id: str = "42",
+    extra_files: Optional[Dict[str, str]] = None,
+) -> DualVerificationResult:
+    """
+    Top-level helper function matching Amazon Bedrock AgentCore action group declaration.
+    Verifies candidate patch against adversarial test and baseline test suite.
+    """
+    verifier = DualRegressionVerifier()
+    return verifier.verify_patch(
+        original_code=original_code,
+        patched_code=patched_code,
+        adversarial_test_code=adversarial_test_code,
+        baseline_test_code=baseline_test_code,
+        source_filename=source_filename,
+        pr_id=pr_id,
+        extra_files=extra_files,
+    )
+

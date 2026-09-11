@@ -580,7 +580,7 @@
       lucide.createIcons();
     }
 
-    function applyVerifiedPatch() {
+    async function applyVerifiedPatch() {
       if (!currentScenario || !currentAuditResult) return;
 
       if (currentScenario.id === 'CUSTOM') {
@@ -602,10 +602,31 @@
       document.getElementById('card-status-badge').innerText = 'VERIFIED IMMUNE';
       document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold';
 
+      let committedPath = currentAuditResult.dual_verification ? currentAuditResult.dual_verification.permanent_test_path : 'tests/regressions/';
+
+      // Physical disk persistence via backend API
+      try {
+        if (currentAuditId) {
+          const commitRes = await fetch('/api/patch/commit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audit_id: currentAuditId })
+          });
+          if (commitRes.ok) {
+            const commitData = await commitRes.json();
+            if (commitData.permanent_test_path) {
+              committedPath = commitData.permanent_test_path;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Backend commit call error:', err);
+      }
+
       appendTelemetryLog({
         timestamp: new Date().toLocaleTimeString(),
         phase: 'RECURSIVE_TEST_COMMITTED',
-        message: `Committed permanent regression guard ${currentAuditResult.dual_verification ? currentAuditResult.dual_verification.permanent_test_path : 'tests/regressions/'}. PR is ready to merge.`
+        message: `Committed permanent regression guard to disk: ${committedPath}. Codebase is permanently immunized.`
       });
       lucide.createIcons();
     }

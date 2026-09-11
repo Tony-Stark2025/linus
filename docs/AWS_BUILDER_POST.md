@@ -119,33 +119,37 @@ To demonstrate Linus in action, let’s look at a classic enterprise failure mod
 A developer implements tiered volume discounts for an e-commerce platform. Orders over $100 receive a 15% discount, and the first item in the cart is checked for partner promotion eligibility:
 
 ```python
-def calculate_checkout_total(items, promo_code=None):
-    subtotal = sum(item["price"] for item in items)
+def calculate_order_total(cart: Dict[str, Any]) -> float:
+    items: List[Dict[str, Any]] = cart.get("items", [])
     
-    # Check if first item qualifies for partner bonus
-    first_category = items[0]["category"]  # <-- Structural Hazard!
+    # Feature addition from PR: inspect first item category for partner tag
+    primary_category = items[0].get("category", "general")  # <-- Structural Hazard!
     
-    if subtotal > 100:
-        return subtotal * 0.85
-    return subtotal
+    subtotal = sum(item["price"] * item["quantity"] for item in items)
+    if subtotal >= 100.0:
+        discount = subtotal * 0.15
+    else:
+        discount = 0.0
+    return round(subtotal - discount, 2)
 ```
 
 The PR author wrote unit tests for standard orders ($150 with 3 items). **All tests passed with flying colors.** Linter passed. Peer review was about to merge it.
 
 ### Linus Steps In
 1. **Deterministic AST Parser**: Flags line 5: `Subscript on identifier 'items' with constant index 0 without preceding len() check.`
-2. **Adversarial Synthesis**: Strands agent formulates the boundary condition: *What happens when a customer applies a promo code with an empty cart (`items = []`)?*
+2. **Adversarial Synthesis**: Strands agent formulates the boundary condition: *What happens when a customer applies a coupon with an empty cart (`items = []`)?*
 3. **Sandbox Execution**: Linus runs the test in an isolated subprocess sandbox.
 4. **Result**:
    ```
    IndexError: list index out of range
-   Line 5: first_category = items[0]["category"]
+   Line 5: primary_category = items[0].get("category", "general")
    Exit Code: 1
    ```
 5. **Assured Execution Gate Triggers**: Because `exit_code != 0`, Linus proves the defect.
 6. **Dual-Suite Patch Verification**: Linus synthesizes a defensive guard:
    ```python
-   first_category = items[0]["category"] if items else None
+   if not items:
+       return 0.0
    ```
    It runs both the adversarial test (passes) and the original unit tests (passes).
 7. **Permanent Immunization**: Linus commits `tests/regressions/test_linus_pr_104.py`.

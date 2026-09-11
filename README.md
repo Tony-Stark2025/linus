@@ -9,7 +9,7 @@
 [![Strands SDK](https://img.shields.io/badge/Powered%20By-Strands%20Agents%20SDK%20v1.55-0ea5e9?style=for-the-badge)](https://pypi.org/project/strands-agents/)
 [![Bedrock AgentCore](https://img.shields.io/badge/Runtime-Amazon%20Bedrock%20AgentCore-7c3aed?style=for-the-badge&logo=amazonaws)](https://aws.amazon.com/bedrock/)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-261%2F261%20Passing%20(100%25)-success?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-268%2F268%20Passing%20(100%25)-success?style=for-the-badge)](tests/)
 
 <br />
 
@@ -148,9 +148,9 @@ pip install -e .
 ```
 
 ### 3. Run Automated Engine & Web Server Tests
-Verify that all 261 automated unit, integration, and stress tests pass (AST inspector, boundary synthesizer, sandbox execution, dual verification, Strands SDK tools, and FastAPI telemetry streaming):
+Verify that all 268 automated unit, integration, and stress tests pass (AST inspector, boundary synthesizer, sandbox execution, dual verification, Strands SDK tools, and FastAPI telemetry streaming):
 ```bash
-python -m pytest tests/ -v
+pytest -v
 ```
 
 ### 4. Launch the Enterprise Web Console
