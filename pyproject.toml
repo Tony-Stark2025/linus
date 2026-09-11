@@ -38,3 +38,5 @@ dev = [
 testpaths = ["tests"]
 python_files = "test_*.py"
 pythonpath = ["."]
+norecursedirs = ["tests/regressions"]
+
