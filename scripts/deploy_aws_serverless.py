@@ -60,6 +60,20 @@ def get_ecr_login_token():
         return None, None, None
 
 
+def ensure_aws_credentials():
+    """Ensures AWS credentials are set or prompts interactively."""
+    if not os.environ.get("AWS_ACCESS_KEY_ID"):
+        print("\n🔑 No AWS credentials found in environment.")
+        try:
+            key = input("Enter your AWS_ACCESS_KEY_ID (or press Enter to use AWS CLI login): ").strip()
+            if key:
+                os.environ["AWS_ACCESS_KEY_ID"] = key
+                secret = input("Enter your AWS_SECRET_ACCESS_KEY: ").strip()
+                os.environ["AWS_SECRET_ACCESS_KEY"] = secret
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+
 def main():
     print("=" * 70)
     print("🛡️  LINUS: AWS Serverless Lambda Deployment")
@@ -71,6 +85,7 @@ def main():
     if not check_docker():
         sys.exit(1)
 
+    ensure_aws_credentials()
     print("\n🔑 Authenticating Docker with Amazon ECR...")
     username, password, endpoint = get_ecr_login_token()
 
