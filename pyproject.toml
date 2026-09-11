@@ -10,10 +10,9 @@ readme = "README.md"
 authors = [
     { name = "Linus Contributors" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Testing",
@@ -33,6 +32,10 @@ dependencies = [
 dev = [
     "pytest-asyncio>=0.23.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["linus*", "web_demo*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
