@@ -1,5 +1,5 @@
 # Dockerfile for Linus Enterprise SRE Console
-# Target Platform: AWS App Runner / AWS ECS Fargate / Bedrock AgentCore Runtime
+# Target Platform: Amazon ECS Express Mode / AWS ECS Fargate / Bedrock AgentCore Runtime
 FROM python:3.12-slim
 
 # Set environment variables
