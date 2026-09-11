@@ -8,8 +8,10 @@
 [![Track](https://img.shields.io/badge/AWS%20Hackathon-Track%202%3A%20Professional%20Agents-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://devpost.com)
 [![Strands SDK](https://img.shields.io/badge/Powered%20By-Strands%20Agents%20SDK%20v1.55-0ea5e9?style=for-the-badge)](https://pypi.org/project/strands-agents/)
 [![Bedrock AgentCore](https://img.shields.io/badge/Runtime-Amazon%20Bedrock%20AgentCore-7c3aed?style=for-the-badge&logo=amazonaws)](https://aws.amazon.com/bedrock/)
-[![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
+[![Live Console](https://img.shields.io/badge/Live%20Demo-AWS%20Serverless%20Console-10b981?style=for-the-badge&logo=fastapi)](https://snyy6s27u7t3pyufxbu7yzei3y0dixmk.lambda-url.us-east-1.on.aws/)
+[![Live PR Proof](https://img.shields.io/badge/GitHub%20PR%20%231-Live%20Bot%20Advisory-ef4444?style=for-the-badge&logo=github)](https://github.com/Tony-Stark2025/linus/pull/1)
 [![Tests](https://img.shields.io/badge/Tests-268%2F268%20Passing%20(100%25)-success?style=for-the-badge)](tests/)
+
 
 <br />
 
