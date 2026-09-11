@@ -1,0 +1,43 @@
+name: Linus Autonomous PR Verification Gate
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  adversarial-gate:
+    name: Linus Adversarial Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run Linus Adversarial PR Verification
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python scripts/linus_pr_gate.py --pr-number $PR_NUMBER
