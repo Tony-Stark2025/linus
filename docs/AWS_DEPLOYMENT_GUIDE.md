@@ -10,55 +10,97 @@ Devpost and AWS container deployment workflows require a public GitHub repositor
 
 Using the GitHub CLI (`gh`):
 ```bash
-# 1. Ensure latest commits are pushed to your repository
+# Ensure latest commits are pushed to your repository
 git push origin master
 ```
 Repository URL: `https://github.com/Tony-Stark2025/linus`
 
 ---
 
-## 🚀 Step 2: Deploy to Amazon ECS Express Mode (Modern Container Hosting)
+## 💰 Cost-Optimized Deployment: Serverless vs Container
 
-> [!IMPORTANT]
-> **AWS Platform Note**: Starting April 30, 2026, AWS App Runner is no longer accepting new customers. AWS officially recommends **[Amazon ECS Express Mode](https://us-east-1.console.aws.amazon.com/ecs/v2/express-mode?region=us-east-1)** for deploying containerized web applications with automatic scaling, simplified networking, and public HTTPS endpoints.
+| Deployment Strategy | Monthly Idle Cost | HTTPS Endpoint | Free Tier Covered? | Best For |
+| :--- | :---: | :---: | :---: | :--- |
+| **Method A: AWS Lambda Serverless (via Lambda Web Adapter)** | **$0.00 / month** | Free Native Function URL | ✅ 100% Free Tier | **Hackathons, Demos, $0 Cost** |
+| **Method B: Amazon ECS Express Mode** | **~$35 – $45 / month** | Managed ALB Endpoint | ❌ ALB fee applies | High continuous 24/7 traffic |
 
-### 1. Build and Push Container to Amazon ECR
+> [!TIP]
+> **Recommended**: Use **Method A (AWS Lambda Serverless)**. It costs **$0.00** when idle, handles up to 15-minute timeouts, supports real-time Server-Sent Events (SSE) telemetry response streaming, and generates a free public HTTPS URL instantly.
+
+---
+
+## 🚀 Method A: Deploy to AWS Lambda Serverless ($0/mo, 100% Free Tier)
+
+Linus includes native support for the official **[AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter)** inside [`Dockerfile`](../Dockerfile). It runs the FastAPI app and SSE telemetry streams on AWS Lambda with zero code modifications.
+
+### 1. Build and Push Container Image to Amazon ECR
 
 ```bash
-# Set your AWS configuration
+# 1. Set your AWS environment configuration
 export AWS_REGION=us-east-1
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 export ECR_REPO="linus-sre-console"
 
-# 1. Create ECR repository (if not already created)
+# 2. Create Amazon ECR repository (if not created yet)
 aws ecr create-repository \
   --repository-name $ECR_REPO \
   --region $AWS_REGION
 
-# 2. Authenticate Docker with Amazon ECR
+# 3. Authenticate Docker with Amazon ECR
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-# 3. Build the Linus Docker image
+# 4. Build the container image
 docker build -t $ECR_REPO:latest .
 
-# 4. Tag and push to ECR
+# 5. Tag and push to ECR
 docker tag $ECR_REPO:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest
 docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest
 ```
 
-### 2. Deploy via Amazon ECS Express Mode
+### 2. Create the Serverless Lambda Function
+
+1. Open the [AWS Lambda Console](https://console.aws.amazon.com/lambda).
+2. Click **Create function** &rarr; select **Container image**:
+   - **Function name**: `linus-sre-console`
+   - **Container image URI**: Select `linus-sre-console:latest` from ECR.
+   - **Architecture**: `x86_64`
+3. Click **Create function**.
+
+### 3. Configure Resources & Free Public HTTPS Function URL
+
+Under the newly created function's **Configuration** tab:
+1. **General configuration**:
+   - **Memory**: `2048 MB` (allocates 2 dedicated vCPUs for rapid pytest execution).
+   - **Timeout**: `3 min 0 sec` (180s).
+   - **Ephemeral storage (`/tmp`)**: `1024 MB` (provides isolated scratch space for tests).
+2. **Function URL** (Instant Free HTTPS Endpoint):
+   - Navigate to **Function URL** &rarr; click **Create Function URL**.
+   - **Auth type**: `NONE` (Publicly accessible for Devpost judges and GitHub PR webhooks).
+   - Expand **Additional settings**:
+     - **Invoke mode**: Select **`RESPONSE_STREAM`** (enables live Server-Sent Events telemetry streaming!).
+     - Check **Configure cross-origin resource sharing (CORS)**.
+   - Click **Save**.
+
+Your live, zero-cost public HTTPS endpoint is immediately ready:
+👉 **`https://<unique-id>.lambda-url.us-east-1.on.aws`**
+
+---
+
+## 🏗️ Method B: Deploy to Amazon ECS Express Mode (Alternative)
+
+> [!NOTE]
+> Starting April 30, 2026, AWS App Runner is no longer accepting new customers. AWS officially recommends **Amazon ECS Express Mode** for full container cluster deployments.
 
 1. Open the [Amazon ECS Express Mode Console](https://us-east-1.console.aws.amazon.com/ecs/v2/express-mode?region=us-east-1).
 2. Click **Create Service**:
    - **Service Name**: `linus-sre-console`
    - **Container Image URI**: `<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/linus-sre-console:latest`
    - **Container Port**: `8000`
-   - **Public IP / Internet Access**: Enabled (Assign Public IP)
-   - **Environment**:
+   - **Public IP / Internet Access**: Enabled
+   - **Environment Variables**:
      - `PORT`: `8000`
      - `AWS_DEFAULT_REGION`: `us-east-1`
 3. Click **Deploy**.
-4. In ~2 minutes, Amazon ECS Express Mode provisions the task and provides an active public HTTPS endpoint for your live Linus SRE Console!
 
 ---
 
@@ -91,7 +133,7 @@ Go to the [AWS Agents for Humans Hackathon on Devpost](https://devpost.com):
 2. **Tagline**: `Zero false-positive ambient PR verification powered by Strands Agents SDK & Amazon Bedrock AgentCore.`
 3. **Track**: Select **Track 2: Professional Agents**.
 4. **GitHub Repository URL**: `https://github.com/Tony-Stark2025/linus`
-5. **Live Application URL**: Your Amazon ECS Express Mode public endpoint (or local demo recording link).
+5. **Live Application URL**: Your AWS Lambda Function URL (`https://<id>.lambda-url.us-east-1.on.aws`) or ECS Express Mode URL.
 6. **Demo Video Link**: Link your recorded demo video (≤ 5 minutes, see `docs/DEMO_VIDEO_SCRIPT.md`).
 7. **Project Description**: Copy the executive summary and architecture diagrams from `README.md`.
 8. **Bonus Points (+0.6)**: Publish `docs/AWS_BUILDER_POST.md` on [builder.aws.com](https://builder.aws.com) and paste the article link in the submission form!

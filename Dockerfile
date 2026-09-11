@@ -1,11 +1,16 @@
 # Dockerfile for Linus Enterprise SRE Console
-# Target Platform: Amazon ECS Express Mode / AWS ECS Fargate / Bedrock AgentCore Runtime
+# Target Platform: AWS Lambda Serverless (via Lambda Web Adapter) / Amazon ECS / Bedrock AgentCore
 FROM python:3.12-slim
+
+# Copy AWS Lambda Web Adapter (enables FastAPI/Uvicorn to run on AWS Lambda serverless with response streaming)
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 /lambda-adapter /opt/extensions/lambda-adapter
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000 \
+    AWS_LWA_PORT=8000 \
+    AWS_LWA_INVOKE_MODE=response_stream \
     AWS_DEFAULT_REGION=us-east-1
 
 WORKDIR /app
