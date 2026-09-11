@@ -93,6 +93,10 @@ jobs:
               --function-name $LAMBDA_FUNCTION_NAME \
               --image-uri $IMAGE_URI \
               --region $AWS_REGION
+            
+            echo "Waiting for function update to complete..."
+            aws lambda wait function-updated-v2 --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || \
+            aws lambda wait function-updated --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || sleep 10
           else
             echo "Creating new Lambda function $LAMBDA_FUNCTION_NAME..."
             aws lambda create-function \
@@ -108,7 +112,10 @@ jobs:
             echo "Waiting for Lambda function to become active..."
             aws lambda wait function-active-v2 --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || \
             aws lambda wait function-active --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || sleep 15
+          fi
 
+          # 3. Ensure Function URL exists
+          if ! aws lambda get-function-url-config --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION >/dev/null 2>&1; then
             echo "Creating Lambda Function URL with RESPONSE_STREAM..."
             aws lambda create-function-url-config \
               --function-name $LAMBDA_FUNCTION_NAME \
@@ -116,18 +123,27 @@ jobs:
               --invoke-mode RESPONSE_STREAM \
               --cors '{"AllowOrigins":["*"],"AllowMethods":["*"],"AllowHeaders":["*"]}' \
               --region $AWS_REGION
-
-            echo "Configuring public access for Function URL..."
-            aws lambda add-permission \
-              --function-name $LAMBDA_FUNCTION_NAME \
-              --action lambda:InvokeFunctionUrl \
-              --statement-id FunctionURLAllowPublicAccess \
-              --principal "*" \
-              --function-url-auth-type NONE \
-              --region $AWS_REGION
           fi
 
-          # 3. Print the live Function URL
+          # 4. Configure public permissions (both InvokeFunctionUrl and InvokeFunction)
+          echo "Configuring public access permissions for Function URL..."
+          aws lambda add-permission \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --action lambda:InvokeFunctionUrl \
+            --statement-id FunctionURLAllowPublicAccess \
+            --principal "*" \
+            --function-url-auth-type NONE \
+            --region $AWS_REGION 2>/dev/null || true
+
+          aws lambda add-permission \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --action lambda:InvokeFunction \
+            --statement-id FunctionURLAllowPublicInvoke \
+            --principal "*" \
+            --invoked-via-function-url \
+            --region $AWS_REGION 2>/dev/null || true
+
+          # 5. Print the live Function URL
           URL=$(aws lambda get-function-url-config --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION --query 'FunctionUrl' --output text 2>/dev/null || echo "Pending")
           echo ""
           echo "=========================================================="
