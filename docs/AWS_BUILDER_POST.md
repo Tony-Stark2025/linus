@@ -169,5 +169,5 @@ Key roadmap items:
 * **IDE Plugin (Antigravity & VS Code)**: Running Linus boundary checks locally before git commit.
 
 Explore the open-source codebase, run the interactive web console, and try the scenarios yourself:
-🔗 **GitHub Repository**: [https://github.com/bright-lovelace/linus](https://github.com/bright-lovelace/linus)  
+🔗 **GitHub Repository**: [https://github.com/Tony-Stark2025/linus](https://github.com/Tony-Stark2025/linus)  
 🏆 **AWS Hackathon Track**: Track 2: Professional Agents

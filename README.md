@@ -140,7 +140,7 @@ Linus features a real-time, dark-mode Enterprise SRE Console with live Server-Se
 
 ### 2. Clone & Install
 ```bash
-git clone https://github.com/bright-lovelace/linus.git
+git clone https://github.com/Tony-Stark2025/linus.git
 cd linus
 
 # Install dependencies
