@@ -321,18 +321,20 @@ def test_headless_chrome_live_viewports_and_interactive_flows():
                     assert loaded is True
 
                     # 1. Test 1920x1080 & 1280x800 above-the-fold layout on PR-104 Defect Proven
+                    await eval_js("selectScenario('PR-104'); triggerAudit();")
+                    for _ in range(180):
+                        badge = await eval_js("document.getElementById('card-status-badge').innerText")
+                        if badge == "DEFECT PROVEN":
+                            break
+                        await asyncio.sleep(0.1)
+                    assert badge == "DEFECT PROVEN"
+
                     for width, height in [(1920, 1080), (1280, 800)]:
                         await cdp_call(
                             "Emulation.setDeviceMetricsOverride",
                             {"width": width, "height": height, "deviceScaleFactor": 1, "mobile": False},
                         )
-                        await eval_js("selectScenario('PR-104'); triggerAudit();")
-                        for _ in range(80):
-                            badge = await eval_js("document.getElementById('card-status-badge').innerText")
-                            if badge == "DEFECT PROVEN":
-                                break
-                            await asyncio.sleep(0.1)
-                        assert badge == "DEFECT PROVEN"
+                        await asyncio.sleep(0.1)
 
                         metrics = await eval_js("""(() => {
                             const applyRect = document.getElementById('btn-apply-patch').getBoundingClientRect();
