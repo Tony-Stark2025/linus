@@ -80,6 +80,8 @@ class AuditRequest(BaseModel):
 class CommitPatchRequest(BaseModel):
     audit_id: str
     apply_source_patch: bool = False
+    test_code: Optional[str] = None
+    pr_id: Optional[str] = None
 
 
 @app.get("/api/scenarios")
@@ -162,8 +164,12 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
         evict_old_cache()
         telemetry_callback({"phase": "TERMINATE", "message": "Audit completed.", "data": {"audit_id": audit_id}})
 
-    background_tasks.add_task(run_agent_job)
-    return {"audit_id": audit_id, "status": "QUEUED"}
+    await asyncio.to_thread(run_agent_job)
+    return {
+        "audit_id": audit_id,
+        "status": "QUEUED",
+        "result": AUDIT_RESULTS.get(audit_id),
+    }
 
 
 @app.get("/api/download/test/{audit_id}")
@@ -190,6 +196,12 @@ async def commit_patch_and_test(req: CommitPatchRequest):
     and permanently immunizes the repository.
     """
     audit_data = _get_persisted_audit_result(req.audit_id)
+    if not audit_data and req.test_code:
+        audit_data = {
+            "pr_id": req.pr_id or "custom",
+            "failing_test": {"test_code": req.test_code},
+            "dual_verification": {},
+        }
     if not audit_data:
         return JSONResponse(status_code=404, content={"error": "Audit result not found."})
 

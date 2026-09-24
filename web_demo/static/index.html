@@ -469,6 +469,9 @@
         });
         const data = await res.json();
         currentAuditId = data.audit_id;
+        if (data.result) {
+          currentAuditResult = data.result;
+        }
 
         // Connect to SSE stream
         const eventSource = new EventSource(`/api/audit/stream/${currentAuditId}`);
@@ -489,6 +492,9 @@
 
         eventSource.onerror = () => {
           eventSource.close();
+          if (logContainer.children.length === 0 && currentAuditResult && currentAuditResult.telemetry_trace) {
+            currentAuditResult.telemetry_trace.forEach(evt => appendTelemetryLog(evt));
+          }
           btn.disabled = false;
           btn.classList.remove('opacity-50');
           document.getElementById('telemetry-spinner').classList.add('hidden');
@@ -529,10 +535,16 @@
     async function fetchFinalResult(auditId) {
       try {
         const res = await fetch(`/api/audit/result/${auditId}`);
-        currentAuditResult = await res.json();
-        renderSurfaceCard(currentAuditResult);
+        if (res.ok) {
+          currentAuditResult = await res.json();
+        }
+        if (currentAuditResult) {
+          renderSurfaceCard(currentAuditResult);
+        }
       } catch (err) {
-        console.error('Failed to get result:', err);
+        if (currentAuditResult) {
+          renderSurfaceCard(currentAuditResult);
+        }
       }
     }
 
@@ -610,7 +622,11 @@
           const commitRes = await fetch('/api/patch/commit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ audit_id: currentAuditId })
+            body: JSON.stringify({
+              audit_id: currentAuditId,
+              test_code: currentAuditResult && currentAuditResult.failing_test ? currentAuditResult.failing_test.test_code : null,
+              pr_id: currentAuditResult ? currentAuditResult.pr_id : null
+            })
           });
           if (commitRes.ok) {
             const commitData = await commitRes.json();
