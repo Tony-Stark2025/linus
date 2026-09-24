@@ -40,3 +40,9 @@ htmlcov/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Media & Video Assets
+*.mp4
+*.wav
+demo_video_assets/
+
