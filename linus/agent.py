@@ -229,6 +229,54 @@ class LinusAgent:
 
         # Step 1: AST Inspection via Strands inspect_code_ast tool
         self._emit("AST_ANALYSIS", "Deterministically inspecting source code AST and risk vectors via Strands SDK...")
+        if not source_code or not source_code.strip():
+            self._emit("TEST_INVALID", "Source code is empty; no executable functions or statements to audit.")
+            empty_res = TestExecutionResult(
+                status=TestStatus.ERROR,
+                exit_code=2,
+                test_code="",
+                exception_type="EmptySourceError",
+                exception_message="Source code is empty; provide valid Python code to audit.",
+                exception_line=1,
+            )
+            return LinusAuditResult(
+                pr_id=pr_id,
+                repository=repository,
+                status="INCONCLUSIVE",
+                defect_proven=False,
+                ast_summary=ASTAnalysisResult(file_path=target_filename, functions=[]),
+                failing_test=empty_res,
+                telemetry_trace=self.telemetry_history,
+                execution_time_seconds=round(time.time() - start_time, 2),
+            )
+
+        import ast as _ast
+        try:
+            _ast.parse(source_code)
+        except SyntaxError as syn_err:
+            self._emit(
+                "TEST_INVALID",
+                f"Source code failed AST parsing with SyntaxError on line {syn_err.lineno or 1}: {syn_err.msg}",
+            )
+            syn_res = TestExecutionResult(
+                status=TestStatus.SYNTAX_ERROR,
+                exit_code=2,
+                test_code="",
+                exception_type="SyntaxError",
+                exception_message=f"{syn_err.msg} (line {syn_err.lineno or 1})",
+                exception_line=syn_err.lineno or 1,
+            )
+            return LinusAuditResult(
+                pr_id=pr_id,
+                repository=repository,
+                status="INCONCLUSIVE",
+                defect_proven=False,
+                ast_summary=ASTAnalysisResult(file_path=target_filename, functions=[]),
+                failing_test=syn_res,
+                telemetry_trace=self.telemetry_history,
+                execution_time_seconds=round(time.time() - start_time, 2),
+            )
+
         ast_tool_res = self.strands_agent.tool.inspect_code_ast(
             source_code=source_code,
             file_path=target_filename,

@@ -25,9 +25,11 @@ class DualRegressionVerifier:
         self.runner = sandbox_runner or SandboxTestRunner()
 
     def generate_unified_diff(self, original: str, patched: str, filename: str = "service.py") -> str:
-        """Generates standard unified diff representation."""
-        orig_lines = original.splitlines(keepends=True)
-        patched_lines = patched.splitlines(keepends=True)
+        """Generates standard unified diff representation with guaranteed trailing newline separation."""
+        orig_norm = (original if original.endswith("\n") else original + "\n") if original else ""
+        patched_norm = (patched if patched.endswith("\n") else patched + "\n") if patched else ""
+        orig_lines = orig_norm.splitlines(keepends=True)
+        patched_lines = patched_norm.splitlines(keepends=True)
         diff = difflib.unified_diff(
             orig_lines,
             patched_lines,

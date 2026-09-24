@@ -491,7 +491,20 @@ def _extract_function_signature(
         if (p.type_annotation and ("Optional" in p.type_annotation or "None" in p.type_annotation))
         or (p.default_value == "None")
     ]
+    strict_non_null_params = [
+        p.name for p in params
+        if p.type_annotation
+        and "optional" not in p.type_annotation.lower()
+        and "none" not in p.type_annotation.lower()
+        and "any" not in p.type_annotation.lower()
+        and p.default_value != "None"
+        and (
+            p.type_annotation.strip().lower() in ("str", "int", "float", "bool", "bytes", "list", "tuple", "set")
+            or p.type_annotation.strip().lower().startswith(("list[", "tuple[", "set["))
+        )
+    ]
     visitor = RiskVisitor(param_names=param_names, nullable_param_names=nullable_param_names)
+    visitor.guarded_non_null.update(strict_non_null_params)
     visitor.visit(node)
 
     return FunctionSignature(

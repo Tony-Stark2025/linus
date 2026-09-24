@@ -11,12 +11,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest" defer></script>
   <!-- Prism.js Syntax Highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js" defer></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -60,33 +60,33 @@
 <body class="bg-dark-950 text-slate-200 font-sans min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-black">
 
   <!-- TOP HEADER -->
-  <header class="border-b border-dark-800 bg-dark-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center space-x-3.5">
-      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-dark-950 font-bold shadow-lg shadow-teal-500/20">
-        <i data-lucide="shield-alert" class="w-5 h-5 text-black"></i>
+  <header class="border-b border-dark-800 bg-dark-900/80 backdrop-blur sticky top-0 z-50 px-4 lg:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center space-x-3">
+      <div class="h-8 w-8 shrink-0 rounded-lg bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-dark-950 font-bold shadow-lg shadow-teal-500/20">
+        <i data-lucide="shield-alert" class="w-4 h-4 text-black"></i>
       </div>
       <div>
-        <div class="flex items-center space-x-2">
-          <span class="font-bold text-lg tracking-tight text-white">LINUS</span>
-          <span class="px-2 py-0.5 text-xs font-semibold rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">v0.2.0-sota</span>
-          <span class="px-2 py-0.5 text-xs font-medium rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 flex items-center gap-1">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="font-bold text-base lg:text-lg tracking-tight text-white whitespace-nowrap">LINUS</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded bg-teal-500/10 text-teal-400 border border-teal-500/20 whitespace-nowrap">v0.2.0-sota</span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 flex items-center gap-1 whitespace-nowrap">
             <i data-lucide="cpu" class="w-3 h-3"></i> AWS Bedrock AgentCore
           </span>
-          <span class="px-2 py-0.5 text-xs font-medium rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+          <span class="px-2 py-0.5 text-xs font-medium rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1 whitespace-nowrap">
             <i data-lucide="sparkles" class="w-3 h-3"></i> Strands Agents SDK
           </span>
         </div>
-        <p class="text-xs text-slate-400 font-medium">Autonomous Adversarial PR Verifier &bull; Professional Agents Track</p>
+        <p class="text-[11px] text-slate-400 font-medium">Autonomous Adversarial PR Verifier &bull; Professional Agents Track</p>
       </div>
     </div>
 
     <!-- Quick Scenario Selector & Actions -->
-    <div class="flex items-center space-x-3">
-      <div class="flex items-center bg-dark-850 border border-dark-700 rounded-lg p-1 text-xs">
-        <label class="px-2.5 text-slate-400 font-medium flex items-center gap-1.5">
+    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
+      <div class="flex items-center bg-dark-850 border border-dark-700 rounded-lg p-1 text-xs max-w-full">
+        <label class="px-2 text-slate-400 font-medium hidden sm:flex items-center gap-1.5 whitespace-nowrap">
           <i data-lucide="git-pull-request" class="w-3.5 h-3.5 text-teal-400"></i> PR Scenario:
         </label>
-        <select id="scenario-selector" class="bg-dark-900 text-white font-mono px-3 py-1.5 rounded border border-dark-700 focus:outline-none focus:border-teal-500 text-xs">
+        <select id="scenario-selector" class="bg-dark-900 text-white font-mono px-2.5 py-1 rounded border border-dark-700 focus:outline-none focus:border-teal-500 text-xs max-w-[230px] sm:max-w-none">
           <option value="PR-104">PR-104 &bull; Bulk Discounts (Empty Cart IndexError)</option>
           <option value="PR-209">PR-209 &bull; Guest Checkout (Nullable TypeError)</option>
           <option value="PR-318">PR-318 &bull; Average Order Value (ZeroDivisionError)</option>
@@ -95,7 +95,7 @@
         </select>
       </div>
 
-      <button id="btn-run-audit" onclick="triggerAudit()" class="px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-black font-semibold rounded-lg text-xs shadow-lg shadow-teal-500/25 flex items-center gap-2 transition-all active:scale-95 cursor-pointer">
+      <button id="btn-run-audit" onclick="triggerAudit()" class="px-3.5 py-1.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-black font-semibold rounded-lg text-xs shadow-lg shadow-teal-500/25 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0">
         <i data-lucide="play" class="w-3.5 h-3.5 fill-black"></i>
         <span>Run Autonomous Audit</span>
       </button>
@@ -103,104 +103,103 @@
   </header>
 
   <!-- ENTERPRISE KPI METRICS STRIP -->
-  <div class="bg-dark-900/60 border-b border-dark-800 px-6 py-2 flex items-center justify-between text-xs font-mono">
-    <div class="flex items-center space-x-6 text-slate-400">
-      <div class="flex items-center gap-1.5">
+  <div class="bg-dark-900/60 border-b border-dark-800 px-4 lg:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-slate-400">
+      <div class="flex items-center gap-1.5 whitespace-nowrap">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
         <span>Zero False-Positive Gate: <strong class="text-emerald-300">100% Guaranteed</strong> (Exit Code != 0)</span>
       </div>
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 whitespace-nowrap">
         <span class="w-2 h-2 rounded-full bg-teal-400"></span>
         <span>Strands Tool Registry: <strong class="text-teal-300">4 @tool Functions Active</strong></span>
       </div>
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 whitespace-nowrap">
         <span class="w-2 h-2 rounded-full bg-purple-400"></span>
         <span>Pytest Sandbox Isolation: <strong class="text-purple-300">Active (15s Timeout)</strong></span>
       </div>
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 whitespace-nowrap">
         <span class="w-2 h-2 rounded-full bg-amber-400"></span>
         <span>Permanent Immunization Guards: <strong class="text-amber-300">tests/regressions/</strong></span>
       </div>
     </div>
-    <div class="text-slate-400">
-      Engine: Python 3.12+ + Bedrock Claude 3.7
+    <div class="text-slate-400 whitespace-nowrap">
+      Engine: Python 3.12+ &bull; Bedrock Claude 3.7
     </div>
   </div>
 
   <!-- MAIN 3-PANEL WORKSPACE -->
-  <main class="flex-1 p-6 grid grid-cols-12 gap-6 max-w-[1920px] mx-auto w-full">
+  <main class="flex-1 px-4 py-2.5 grid grid-cols-12 gap-4 max-w-[1920px] mx-auto w-full">
 
     <!-- PANEL 1: PULL REQUEST & DIFF INSPECTOR (Cols 1-4) -->
-    <section class="col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
-      <div class="px-4 py-3 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
+    <section class="col-span-12 lg:col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-2 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
           <i data-lucide="git-pull-request-draft" class="w-4 h-4 text-teal-400"></i>
           <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Pull Request Under Audit</h2>
         </div>
-        <span id="pr-status-badge" class="px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+        <span id="pr-status-badge" class="px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 whitespace-nowrap">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Unit Tests Passing (2/2)
         </span>
       </div>
 
-      <div class="p-4 flex flex-col flex-1 overflow-y-auto space-y-4">
+      <div id="pr-inspector-scroll" class="p-3 flex flex-col flex-1 overflow-y-auto space-y-2.5">
         <!-- PR Header Details -->
-        <div class="bg-dark-850/70 border border-dark-800 rounded-lg p-3.5 space-y-2">
+        <div class="bg-dark-850/70 border border-dark-800 rounded-lg p-2.5 space-y-1.5">
           <div class="flex items-start justify-between">
             <h3 id="pr-title" class="text-sm font-semibold text-white leading-snug">feat(pricing): add tiered bulk volume discounts to checkout</h3>
           </div>
-          <div class="flex items-center text-xs text-slate-400 gap-3 font-mono">
+          <div class="flex flex-wrap items-center text-xs text-slate-400 gap-2 font-mono">
             <span id="pr-repo" class="text-teal-400 flex items-center gap-1"><i data-lucide="folder" class="w-3 h-3"></i> acme-corp/ecommerce-service</span>
             <span id="pr-branch" class="text-slate-300 flex items-center gap-1"><i data-lucide="git-branch" class="w-3 h-3"></i> feature/tiered-discounts</span>
             <span id="pr-author" class="text-slate-400">&bull; @alex-dev</span>
           </div>
-          <p id="pr-desc" class="text-xs text-slate-300 leading-relaxed bg-dark-900/50 p-2.5 rounded border border-dark-800 italic">
+          <p id="pr-desc" class="text-xs text-slate-300 leading-relaxed bg-dark-900/50 p-2 rounded border border-dark-800 italic">
             "Implements tiered bulk discount logic: orders over $100 receive a 15% discount. Also inspects first item category for partner promotion eligibility. All unit tests are passing!"
           </p>
         </div>
 
         <!-- Custom Code Editor (Shown only in CUSTOM mode) -->
-        <div id="custom-code-container" class="hidden flex-col space-y-3">
-          <div class="flex items-center justify-between text-xs text-slate-400">
+        <div id="custom-code-container" class="hidden flex-col space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
             <span class="font-mono flex items-center gap-1.5 text-teal-300 font-semibold">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Custom Python Source Code:
             </span>
-            <span class="text-[11px] text-slate-400">Autonomous Boundary Synthesis Enabled</span>
+            <div class="flex items-center gap-1.5">
+              <label for="custom-filename-input" class="text-[11px] font-mono text-slate-400">File:</label>
+              <input id="custom-filename-input" type="text" value="custom_service.py" placeholder="custom_service.py" class="bg-dark-950 border border-dark-700 rounded px-2 py-0.5 font-mono text-xs text-white focus:outline-none focus:border-teal-500 w-36" />
+            </div>
           </div>
-          <textarea id="custom-source-input" rows="8" class="w-full bg-dark-950 border border-dark-700 rounded-lg p-3 font-mono text-xs text-teal-300 focus:outline-none focus:border-teal-500" placeholder="def process_order(items):&#10;    return items[0]['id']">def calculate_discount(items, user=None):
+          <textarea id="custom-source-input" rows="7" class="w-full bg-dark-950 border border-dark-700 rounded-lg p-2.5 font-mono text-xs text-teal-300 focus:outline-none focus:border-teal-500" placeholder="def process_order(items):&#10;    return items[0]['id']">def calculate_discount(items, user=None):
     # Potential empty list subscript
     first_item = items[0]
     return first_item["price"] * 0.9</textarea>
           
-          <label class="text-xs font-mono text-slate-400">Optional Candidate Defensive Patch:</label>
-          <textarea id="custom-patch-input" rows="4" class="w-full bg-dark-950 border border-dark-700 rounded-lg p-3 font-mono text-xs text-emerald-300 focus:outline-none focus:border-emerald-500" placeholder="def calculate_discount(items, user=None):&#10;    if not items: return 0.0&#10;    return items[0]['price'] * 0.9">def calculate_discount(items, user=None):
-    if not items:
-        return 0.0
-    first_item = items[0]
-    return first_item["price"] * 0.9</textarea>
+          <label class="text-xs font-mono text-slate-400">Optional Candidate Defensive Patch (leave blank for autonomous synthesis):</label>
+          <textarea id="custom-patch-input" rows="4" class="w-full bg-dark-950 border border-dark-700 rounded-lg p-2.5 font-mono text-xs text-emerald-300 focus:outline-none focus:border-emerald-500" placeholder="Leave blank to let Linus synthesize the defensive AST patch automatically, or paste a candidate patch..."></textarea>
         </div>
 
         <!-- Standard PR Code View (Hidden in CUSTOM mode) -->
-        <div id="standard-code-container" class="flex-1 flex flex-col space-y-2">
+        <div id="standard-code-container" class="flex-1 flex flex-col space-y-1.5">
           <div class="flex items-center justify-between text-xs text-slate-400">
             <span class="font-mono flex items-center gap-1.5 text-slate-300">
               <i data-lucide="file-code" class="w-3.5 h-3.5 text-teal-400"></i> Target Source: <span id="pr-target-file" class="text-white font-semibold">checkout_service.py</span>
             </span>
             <span class="text-[11px] text-slate-400">Candidate PR Branch</span>
           </div>
-          <div class="relative bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-xs text-slate-300 overflow-x-auto max-h-72">
+          <div class="relative bg-dark-950 border border-dark-800 rounded-lg p-2 font-mono text-xs text-slate-300 overflow-x-auto max-h-44">
             <pre><code id="pr-source-code" class="language-python">Loading source code...</code></pre>
           </div>
         </div>
 
         <!-- Baseline Tests View -->
-        <div id="standard-baseline-container" class="flex flex-col space-y-2">
+        <div id="standard-baseline-container" class="flex flex-col space-y-1.5">
           <div class="flex items-center justify-between text-xs text-slate-400">
             <span class="font-mono flex items-center gap-1.5 text-slate-300">
               <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> Baseline Developer Tests (Happy Path)
             </span>
             <span class="text-[11px] text-emerald-400 font-mono font-medium">100% PASS</span>
           </div>
-          <div class="bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-[11px] text-slate-400 overflow-x-auto max-h-48">
+          <div class="bg-dark-950 border border-dark-800 rounded-lg p-2 font-mono text-[11px] text-slate-400 overflow-x-auto max-h-28">
             <pre><code id="pr-baseline-tests" class="language-python">Loading baseline tests...</code></pre>
           </div>
         </div>
@@ -208,8 +207,8 @@
     </section>
 
     <!-- PANEL 2: AGENTCORE TELEMETRY STREAM (Cols 5-8) -->
-    <section class="col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
-      <div class="px-4 py-3 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
+    <section class="col-span-12 lg:col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-2 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <i data-lucide="terminal" class="w-4 h-4 text-purple-400"></i>
           <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">AgentCore Telemetry Trace</h2>
@@ -220,7 +219,7 @@
         </div>
       </div>
 
-      <div id="telemetry-log-container" class="p-4 flex-1 bg-dark-950 font-mono text-xs overflow-y-auto space-y-2.5 max-h-[calc(100vh-180px)]">
+      <div id="telemetry-log-container" class="p-3 flex-1 bg-dark-950 font-mono text-xs overflow-y-auto space-y-2 max-h-[calc(100vh-170px)]">
         <div class="text-slate-400 text-xs italic">
           [System] Ready. Click 'Run Autonomous Audit' to launch Linus on the selected PR.
         </div>
@@ -228,20 +227,20 @@
     </section>
 
     <!-- PANEL 3: THE SURFACE CARD & ACTION CENTER (Cols 9-12) -->
-    <section class="col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
-      <div class="px-4 py-3 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between">
+    <section class="col-span-12 lg:col-span-4 flex flex-col bg-dark-900 border border-dark-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-2 border-b border-dark-800 bg-dark-850/50 flex items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
           <i data-lucide="alert-octagon" class="w-4 h-4 text-red-400"></i>
           <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Linus Surface Decision Card</h2>
         </div>
-        <span id="card-status-badge" class="px-2 py-0.5 text-[11px] font-mono rounded bg-slate-800 text-slate-400 border border-dark-700">
+        <span id="card-status-badge" class="px-2 py-0.5 text-[11px] font-mono rounded bg-slate-800 text-slate-400 border border-dark-700 whitespace-nowrap">
           Awaiting Execution
         </span>
       </div>
 
-      <div id="surface-card-content" class="p-4 flex-1 flex flex-col justify-center items-center text-center space-y-4">
+      <div id="surface-card-content" class="p-2.5 flex-1 flex flex-col items-center text-center space-y-2 overflow-y-auto">
         <!-- Initial Empty State -->
-        <div id="card-empty-state" class="p-8 flex flex-col items-center justify-center text-slate-400 space-y-3">
+        <div id="card-empty-state" class="my-auto p-6 flex flex-col items-center justify-center text-slate-400 space-y-3">
           <div class="w-12 h-12 rounded-full bg-dark-850 border border-dark-700 flex items-center justify-center text-slate-400">
             <i data-lucide="crosshair" class="w-6 h-6"></i>
           </div>
@@ -252,65 +251,65 @@
         </div>
 
         <!-- Defect Proven Container (Shown when defect caught) -->
-        <div id="card-proven-defect" class="hidden w-full text-left space-y-4">
+        <div id="card-proven-defect" class="hidden w-full text-left space-y-1.5">
           <!-- Crash Alert Banner -->
-          <div class="bg-red-950/40 border border-red-500/30 rounded-lg p-3.5 space-y-1.5 pulse-red">
+          <div class="bg-red-950/40 border border-red-500/30 rounded-lg p-2 space-y-0.5 pulse-red">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-red-400 uppercase tracking-wide flex items-center gap-1.5">
-                <i data-lucide="shield-x" class="w-4 h-4 text-red-400"></i> Empirical Defect Proven
+                <i data-lucide="shield-x" class="w-3.5 h-3.5 text-red-400"></i> Empirical Defect Proven
               </span>
               <span class="text-[10px] font-mono px-2 py-0.5 bg-red-500/20 text-red-300 rounded font-semibold">Zero False Positive</span>
             </div>
-            <p id="card-exception-title" class="text-sm font-mono font-bold text-white">IndexError: list index out of range</p>
-            <p id="card-exception-desc" class="text-xs text-red-200/80">Triggered on line 10 when empty collection was passed.</p>
+            <p id="card-exception-title" class="text-xs font-mono font-bold text-white">IndexError: list index out of range</p>
+            <p id="card-exception-desc" class="text-[11px] text-red-200/80">Triggered on line 10 when empty collection was passed.</p>
           </div>
 
           <!-- Adversarial Test Code -->
-          <div class="space-y-1.5">
+          <div class="space-y-1">
             <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
               <span class="flex items-center gap-1.5"><i data-lucide="test-tube-2" class="w-3.5 h-3.5 text-teal-400"></i> Synthesized Adversarial Test</span>
               <span class="text-[10px] font-mono text-slate-400">Executed in Sandbox &bull; Exit Code 1</span>
             </label>
-            <div class="bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-xs text-teal-300 overflow-x-auto max-h-36">
+            <div class="bg-dark-950 border border-dark-800 rounded-lg p-2 font-mono text-xs text-teal-300 overflow-x-auto max-h-20">
               <pre><code id="card-adversarial-code" class="language-python"># Test code</code></pre>
             </div>
           </div>
 
           <!-- Verified Patch & Diff -->
-          <div class="space-y-1.5">
+          <div class="space-y-1">
             <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
               <span class="flex items-center gap-1.5"><i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i> Verified Defensive Patch</span>
               <span class="text-[10px] font-mono text-emerald-400">Dual-Suite Verified (Pass)</span>
             </label>
-            <p id="card-patch-explanation" class="text-xs text-slate-300 italic bg-dark-850 p-2 rounded border border-dark-700">Explanation...</p>
-            <div class="bg-dark-950 border border-dark-800 rounded-lg p-3 font-mono text-xs text-emerald-300 overflow-x-auto max-h-36">
+            <p id="card-patch-explanation" class="text-[11px] text-slate-300 italic bg-dark-850 p-1.5 rounded border border-dark-700 leading-snug">Explanation...</p>
+            <div class="bg-dark-950 border border-dark-800 rounded-lg p-2 font-mono text-xs text-emerald-300 overflow-x-auto max-h-20">
               <pre><code id="card-patch-diff" class="language-diff"># Patch diff</code></pre>
             </div>
           </div>
 
           <!-- Recursive Test Permanent Addition -->
-          <div class="bg-teal-950/20 border border-teal-500/20 rounded-lg p-3 text-xs text-teal-200 flex items-start gap-2.5">
+          <div class="bg-teal-950/20 border border-teal-500/20 rounded-lg p-1.5 text-xs text-teal-200 flex items-start gap-2">
             <i data-lucide="repeat" class="w-4 h-4 text-teal-400 shrink-0 mt-0.5"></i>
             <div>
               <span class="font-bold text-teal-300">Recursive Test Addition:</span>
-              <p class="text-[11px] text-teal-300/80 mt-0.5">
-                This verified test will be permanently added to <code id="card-permanent-path" class="text-white font-mono bg-dark-900 px-1 py-0.5 rounded">tests/regressions/test_linus_pr.py</code> to ensure permanent immunity against this regression.
+              <p class="text-[11px] text-teal-300/80 leading-snug">
+                Permanent regression guard target: <code id="card-permanent-path" class="text-white font-mono bg-dark-900 px-1 py-0.5 rounded">tests/regressions/test_linus_pr_104.py</code>
               </p>
             </div>
           </div>
 
           <!-- 1-Click Action Buttons -->
-          <div class="pt-2 flex flex-col space-y-2">
-            <button id="btn-apply-patch" onclick="applyVerifiedPatch()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-dark-950 font-bold rounded-lg text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
+          <div class="pt-1 flex flex-col space-y-1.5">
+            <button id="btn-apply-patch" onclick="applyVerifiedPatch()" class="w-full py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-dark-950 font-bold rounded-lg text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
               <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-              <span>Approve Patch & Commit Permanent Test</span>
+              <span>Approve Patch &amp; Commit Permanent Test</span>
             </button>
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="copyGithubMarkdown()" class="py-2 bg-dark-800 hover:bg-dark-700 text-slate-300 border border-dark-700 font-medium rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+              <button id="btn-copy-markdown" onclick="copyGithubMarkdown()" class="py-1.5 bg-dark-800 hover:bg-dark-700 text-slate-300 border border-dark-700 font-medium rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span>Copy PR Review</span>
+                <span id="btn-copy-markdown-label">Copy PR Review</span>
               </button>
-              <button onclick="downloadPermanentTestFile()" class="py-2 bg-dark-800 hover:bg-dark-700 text-teal-300 border border-dark-700 font-medium rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+              <button id="btn-download-test" onclick="downloadPermanentTestFile()" class="py-1.5 bg-dark-800 hover:bg-dark-700 text-teal-300 border border-dark-700 font-medium rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">
                 <i data-lucide="download" class="w-3.5 h-3.5"></i>
                 <span>Download Test (.py)</span>
               </button>
@@ -318,12 +317,31 @@
           </div>
         </div>
 
-        <!-- Ambient Silence / Clean State Container (for PR-401 and clean PRs) -->
-        <div id="card-ambient-silence" class="hidden w-full p-8 flex flex-col items-center justify-center text-center space-y-4">
-          <div class="w-16 h-16 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 pulse-green">
-            <i data-lucide="bell-off" class="w-8 h-8"></i>
+        <!-- Inconclusive / Syntax Error Container -->
+        <div id="card-inconclusive-state" class="hidden my-auto w-full p-6 flex flex-col items-center justify-center text-center space-y-3">
+          <div class="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <i data-lucide="file-warning" class="w-7 h-7"></i>
           </div>
-          <div class="space-y-1.5">
+          <div class="space-y-1">
+            <h4 class="text-base font-bold text-white">Audit Inconclusive &bull; Gate Blocked Alert</h4>
+            <span class="px-2.5 py-0.5 text-[10px] font-mono rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+              0 Defects Proven &bull; 0 False Positives Emitted
+            </span>
+          </div>
+          <p id="card-inconclusive-title" class="text-xs font-mono font-semibold text-amber-300 bg-dark-950 border border-amber-500/20 px-3 py-1.5 rounded w-full max-w-sm">
+            SyntaxError: invalid syntax
+          </p>
+          <p id="card-inconclusive-desc" class="text-xs text-slate-300 max-w-xs leading-relaxed">
+            Linus's Assured Execution Gate requires syntactically valid Python code and a deterministic runtime crash in the sandbox before surfacing a defect advisory.
+          </p>
+        </div>
+
+        <!-- Ambient Silence / Clean State Container (for PR-401 and clean PRs) -->
+        <div id="card-ambient-silence" class="hidden my-auto w-full p-6 flex flex-col items-center justify-center text-center space-y-3">
+          <div class="w-14 h-14 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 pulse-green">
+            <i data-lucide="bell-off" class="w-7 h-7"></i>
+          </div>
+          <div class="space-y-1">
             <h4 class="text-base font-bold text-white">Ambient Silence Active</h4>
             <span class="px-2.5 py-0.5 text-[10px] font-mono rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">
               0 Defects Proven &bull; 0 PR Comments Posted
@@ -339,11 +357,11 @@
         </div>
 
         <!-- Clean State Container (When patch applied) -->
-        <div id="card-clean-state" class="hidden w-full p-8 flex flex-col items-center justify-center text-center space-y-3">
+        <div id="card-clean-state" class="hidden my-auto w-full p-6 flex flex-col items-center justify-center text-center space-y-3">
           <div class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 pulse-green">
             <i data-lucide="shield-check" class="w-8 h-8"></i>
           </div>
-          <h4 class="text-base font-bold text-white">PR Verified Clean & Immune</h4>
+          <h4 class="text-base font-bold text-white">PR Verified Clean &amp; Immune</h4>
           <p class="text-xs text-slate-300 max-w-xs leading-relaxed">
             The defensive patch has been verified against both the adversarial test and all baseline tests. Recursive test committed to permanent test suite.
           </p>
@@ -362,6 +380,41 @@
     let currentScenario = null;
     let currentAuditResult = null;
     let currentAuditId = null;
+    let activeAuditToken = 0;
+    let activeEventSource = null;
+    let activeAbortController = null;
+
+    function safeCreateIcons() {
+      try {
+        if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+      } catch (_) {}
+    }
+
+    function safeHighlight(el) {
+      try {
+        if (el && typeof Prism !== 'undefined' && Prism && typeof Prism.highlightElement === 'function') {
+          Prism.highlightElement(el);
+        }
+      } catch (_) {}
+    }
+
+    function normalizeRegressionPath(rawPath) {
+      if (!rawPath) return 'tests/regressions/test_linus_pr_custom.py';
+      return rawPath.replace(/test_linus_pr_pr[-_]/i, 'test_linus_pr_').toLowerCase();
+    }
+
+    function resetSurfaceCardFields() {
+      const advEl = document.getElementById('card-adversarial-code');
+      const diffEl = document.getElementById('card-patch-diff');
+      if (advEl) advEl.textContent = '# No adversarial test generated';
+      if (diffEl) diffEl.textContent = '# No patch diff available';
+      document.getElementById('card-patch-explanation').innerText = 'No patch synthesized.';
+      document.getElementById('card-permanent-path').innerText = 'tests/regressions/test_linus_pr_custom.py';
+      document.getElementById('card-exception-title').innerText = 'None';
+      document.getElementById('card-exception-desc').innerText = '';
+    }
 
     // Load initial scenarios
     async function loadScenarios() {
@@ -377,6 +430,38 @@
     }
 
     function selectScenario(id) {
+      // Cancel any in-flight audit or SSE stream to prevent split-brain UI race conditions
+      activeAuditToken++;
+      if (activeEventSource) {
+        activeEventSource.close();
+        activeEventSource = null;
+      }
+      if (activeAbortController) {
+        activeAbortController.abort();
+        activeAbortController = null;
+      }
+      currentAuditResult = null;
+      currentAuditId = null;
+
+      // Reset Run button & telemetry status
+      const runBtn = document.getElementById('btn-run-audit');
+      if (runBtn) {
+        runBtn.disabled = false;
+        runBtn.classList.remove('opacity-50');
+      }
+      document.getElementById('telemetry-spinner').classList.add('hidden');
+      document.getElementById('telemetry-status').innerText = 'Idle';
+
+      // Reset PR Status Badge so previous scenario's "Immune & Clean" never leaks
+      const prBadge = document.getElementById('pr-status-badge');
+      if (id === 'CUSTOM') {
+        prBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span> Ready for Custom Code';
+        prBadge.className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center gap-1 whitespace-nowrap';
+      } else {
+        prBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Unit Tests Passing (2/2)';
+        prBadge.className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 whitespace-nowrap';
+      }
+
       const customContainer = document.getElementById('custom-code-container');
       const standardContainer = document.getElementById('standard-code-container');
       const standardBaseContainer = document.getElementById('standard-baseline-container');
@@ -409,42 +494,72 @@
         
         const srcEl = document.getElementById('pr-source-code');
         srcEl.textContent = currentScenario.source_code;
-        Prism.highlightElement(srcEl);
+        safeHighlight(srcEl);
 
         const baseEl = document.getElementById('pr-baseline-tests');
         baseEl.textContent = currentScenario.baseline_test_code;
-        Prism.highlightElement(baseEl);
+        safeHighlight(baseEl);
       }
 
-      // Reset Surface Decision Card panels
+      // Reset Surface Decision Card panels & clear any stale code/diffs
+      resetSurfaceCardFields();
       document.getElementById('card-empty-state').classList.remove('hidden');
       document.getElementById('card-proven-defect').classList.add('hidden');
+      document.getElementById('card-inconclusive-state').classList.add('hidden');
       document.getElementById('card-clean-state').classList.add('hidden');
       document.getElementById('card-ambient-silence').classList.add('hidden');
       document.getElementById('card-status-badge').innerText = 'Awaiting Execution';
-      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-slate-800 text-slate-400 border border-dark-700';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-slate-800 text-slate-400 border border-dark-700 whitespace-nowrap';
 
       // Reset telemetry
       const logContainer = document.getElementById('telemetry-log-container');
-      logContainer.innerHTML = `
-        <div class="text-slate-400 text-xs italic">
-          [System] Loaded scenario ${id}. Click 'Run Autonomous Audit' to launch Linus.
-        </div>
-      `;
-      lucide.createIcons();
+      logContainer.innerHTML = '';
+      const sysMsg = document.createElement('div');
+      sysMsg.className = 'text-slate-400 text-xs italic';
+      sysMsg.textContent = `[System] Loaded scenario ${id}. Click 'Run Autonomous Audit' to launch Linus.`;
+      logContainer.appendChild(sysMsg);
+
+      // Reset scroll positions so switching scenarios never leaves user trapped below the fold
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      logContainer.scrollTop = 0;
+      const surfaceContent = document.getElementById('surface-card-content');
+      if (surfaceContent) surfaceContent.scrollTop = 0;
+      const prScroll = document.getElementById('pr-inspector-scroll');
+      if (prScroll) prScroll.scrollTop = 0;
+
+      safeCreateIcons();
     }
 
     async function triggerAudit() {
       if (!currentScenario) return;
 
+      const myToken = ++activeAuditToken;
+      const scenarioIdAtStart = currentScenario.id;
+
+      if (activeEventSource) {
+        activeEventSource.close();
+        activeEventSource = null;
+      }
+      if (activeAbortController) {
+        activeAbortController.abort();
+      }
+      activeAbortController = new AbortController();
+
       const btn = document.getElementById('btn-run-audit');
       btn.disabled = true;
       btn.classList.add('opacity-50');
 
+      resetSurfaceCardFields();
+      document.getElementById('card-empty-state').classList.remove('hidden');
+      document.getElementById('card-proven-defect').classList.add('hidden');
+      document.getElementById('card-inconclusive-state').classList.add('hidden');
+      document.getElementById('card-clean-state').classList.add('hidden');
+      document.getElementById('card-ambient-silence').classList.add('hidden');
+
       document.getElementById('telemetry-spinner').classList.remove('hidden');
       document.getElementById('telemetry-status').innerText = 'Auditing...';
       document.getElementById('card-status-badge').innerText = 'Audit in Progress';
-      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-amber-500/10 text-amber-300 border border-amber-500/20';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 whitespace-nowrap';
 
       const logContainer = document.getElementById('telemetry-log-container');
       logContainer.innerHTML = '';
@@ -452,11 +567,13 @@
       try {
         let payload = {};
         if (currentScenario.id === 'CUSTOM') {
+          const customFname = (document.getElementById('custom-filename-input')?.value || 'custom_service.py').trim() || 'custom_service.py';
+          const rawPatch = (document.getElementById('custom-patch-input').value || '').trim();
           payload = {
             scenario_id: 'PR-CUSTOM',
             custom_source: document.getElementById('custom-source-input').value,
-            custom_patch: document.getElementById('custom-patch-input').value,
-            custom_filename: 'custom_service.py'
+            custom_patch: rawPatch ? rawPatch : null,
+            custom_filename: customFname
           };
         } else {
           payload = { scenario_id: currentScenario.id };
@@ -465,9 +582,16 @@
         const res = await fetch('/api/audit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: activeAbortController.signal
         });
+        if (myToken !== activeAuditToken || !currentScenario || currentScenario.id !== scenarioIdAtStart) {
+          return;
+        }
         const data = await res.json();
+        if (myToken !== activeAuditToken || !currentScenario || currentScenario.id !== scenarioIdAtStart) {
+          return;
+        }
         currentAuditId = data.audit_id;
         if (data.result) {
           currentAuditResult = data.result;
@@ -475,23 +599,33 @@
 
         // Connect to SSE stream
         const eventSource = new EventSource(`/api/audit/stream/${currentAuditId}`);
+        activeEventSource = eventSource;
 
         eventSource.onmessage = (e) => {
+          if (myToken !== activeAuditToken || !currentScenario || currentScenario.id !== scenarioIdAtStart) {
+            eventSource.close();
+            return;
+          }
           const evt = JSON.parse(e.data);
           appendTelemetryLog(evt);
 
           if (evt.phase === 'TERMINATE') {
             eventSource.close();
+            if (activeEventSource === eventSource) activeEventSource = null;
             btn.disabled = false;
             btn.classList.remove('opacity-50');
             document.getElementById('telemetry-spinner').classList.add('hidden');
             document.getElementById('telemetry-status').innerText = 'Completed';
-            fetchFinalResult(currentAuditId);
+            fetchFinalResult(currentAuditId, myToken, scenarioIdAtStart);
           }
         };
 
         eventSource.onerror = () => {
           eventSource.close();
+          if (activeEventSource === eventSource) activeEventSource = null;
+          if (myToken !== activeAuditToken || !currentScenario || currentScenario.id !== scenarioIdAtStart) {
+            return;
+          }
           if (logContainer.children.length === 0 && currentAuditResult && currentAuditResult.telemetry_trace) {
             currentAuditResult.telemetry_trace.forEach(evt => appendTelemetryLog(evt));
           }
@@ -499,12 +633,17 @@
           btn.classList.remove('opacity-50');
           document.getElementById('telemetry-spinner').classList.add('hidden');
           document.getElementById('telemetry-status').innerText = 'Completed';
-          fetchFinalResult(currentAuditId);
+          fetchFinalResult(currentAuditId, myToken, scenarioIdAtStart);
         };
       } catch (err) {
+        if (err && err.name === 'AbortError') return;
         console.error('Audit failed:', err);
-        btn.disabled = false;
-        btn.classList.remove('opacity-50');
+        if (myToken === activeAuditToken) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          document.getElementById('telemetry-spinner').classList.add('hidden');
+          document.getElementById('telemetry-status').innerText = 'Idle';
+        }
       }
     }
 
@@ -522,19 +661,37 @@
       if (evt.phase === 'DUAL_VERIFICATION' || evt.phase === 'VERIFICATION_SUCCESS') badgeColor = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
       if (evt.phase === 'RECURSIVE_TEST_COMMITTED') badgeColor = 'bg-teal-500/20 text-teal-300 border border-teal-500/30';
       if (evt.phase === 'AMBIENT_SILENCE' || evt.phase === 'TEST_PASSED') badgeColor = 'bg-teal-500/20 text-teal-300 border border-teal-500/30';
+      if (evt.phase === 'TEST_INVALID') badgeColor = 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
 
-      row.innerHTML = `
-        <span class="text-[10px] text-slate-400 shrink-0 font-mono">${evt.timestamp || 'now'}</span>
-        <span class="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold shrink-0 ${badgeColor}">${evt.phase}</span>
-        <span class="text-slate-300 break-words flex-1 text-xs">${evt.message}</span>
-      `;
+      const tsSpan = document.createElement('span');
+      tsSpan.className = 'text-[10px] text-slate-400 shrink-0 font-mono';
+      tsSpan.textContent = evt.timestamp || new Date().toLocaleTimeString('en-GB', { hour12: false });
+
+      const phaseSpan = document.createElement('span');
+      phaseSpan.className = `text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold shrink-0 ${badgeColor}`;
+      phaseSpan.textContent = evt.phase || 'LOG';
+
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'text-slate-300 break-words flex-1 text-xs';
+      const rawMsg = String(evt.message || '');
+      msgSpan.textContent = rawMsg.replace(/test_linus_pr_pr[-_]/gi, 'test_linus_pr_');
+
+      row.appendChild(tsSpan);
+      row.appendChild(phaseSpan);
+      row.appendChild(msgSpan);
       container.appendChild(row);
       container.scrollTop = container.scrollHeight;
     }
 
-    async function fetchFinalResult(auditId) {
+    async function fetchFinalResult(auditId, token, expectedScenarioId) {
+      if (token !== activeAuditToken || !currentScenario || currentScenario.id !== expectedScenarioId) {
+        return;
+      }
       try {
         const res = await fetch(`/api/audit/result/${auditId}`);
+        if (token !== activeAuditToken || !currentScenario || currentScenario.id !== expectedScenarioId) {
+          return;
+        }
         if (res.ok) {
           currentAuditResult = await res.json();
         }
@@ -542,7 +699,7 @@
           renderSurfaceCard(currentAuditResult);
         }
       } catch (err) {
-        if (currentAuditResult) {
+        if (token === activeAuditToken && currentAuditResult) {
           renderSurfaceCard(currentAuditResult);
         }
       }
@@ -551,70 +708,92 @@
     function renderSurfaceCard(result) {
       if (!result) return;
 
+      resetSurfaceCardFields();
       document.getElementById('card-empty-state').classList.add('hidden');
       document.getElementById('card-clean-state').classList.add('hidden');
+      document.getElementById('card-proven-defect').classList.add('hidden');
+      document.getElementById('card-ambient-silence').classList.add('hidden');
+      document.getElementById('card-inconclusive-state').classList.add('hidden');
 
       if (result.status === 'VERIFIED_CLEAN') {
-        // Clean scenario (e.g. PR-401)
-        document.getElementById('card-proven-defect').classList.add('hidden');
+        // Clean scenario (e.g. PR-401 or safe typed custom function)
         document.getElementById('card-ambient-silence').classList.remove('hidden');
         document.getElementById('card-status-badge').innerText = 'AMBIENT SILENCE';
-        document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold';
-      } else {
-        // Defect Proven
-        document.getElementById('card-ambient-silence').classList.add('hidden');
+        document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold whitespace-nowrap';
+      } else if (result.status === 'VERIFIED_DEFECT' && result.defect_proven) {
+        // Empirically Proven Defect
         document.getElementById('card-proven-defect').classList.remove('hidden');
 
         document.getElementById('card-status-badge').innerText = 'DEFECT PROVEN';
-        document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-red-500/20 text-red-300 border border-red-500/30 font-bold';
+        document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-red-500/20 text-red-300 border border-red-500/30 font-bold whitespace-nowrap';
 
         if (result.failing_test) {
-          document.getElementById('card-exception-title').innerText = `${result.failing_test.exception_type}: ${result.failing_test.exception_message || 'Unhandled crash'}`;
+          document.getElementById('card-exception-title').innerText = `${result.failing_test.exception_type || 'Exception'}: ${result.failing_test.exception_message || 'Unhandled crash'}`;
           document.getElementById('card-exception-desc').innerText = `Line ${result.failing_test.exception_line || 'unknown'} • Captured in isolated sandbox`;
           
           const advEl = document.getElementById('card-adversarial-code');
-          advEl.textContent = result.failing_test.test_code;
-          Prism.highlightElement(advEl);
+          advEl.textContent = result.failing_test.test_code || '# No test code';
+          safeHighlight(advEl);
         }
 
         if (result.patch) {
           const diffEl = document.getElementById('card-patch-diff');
-          diffEl.textContent = result.patch.diff_patch;
-          Prism.highlightElement(diffEl);
+          diffEl.textContent = result.patch.diff_patch || '# No diff generated';
+          safeHighlight(diffEl);
           document.getElementById('card-patch-explanation').innerText = `"${result.patch.explanation}"`;
         }
 
-        if (result.dual_verification) {
-          document.getElementById('card-permanent-path').innerText = result.dual_verification.permanent_test_path;
+        if (result.dual_verification && result.dual_verification.permanent_test_path) {
+          document.getElementById('card-permanent-path').innerText = normalizeRegressionPath(result.dual_verification.permanent_test_path);
         }
+      } else {
+        // Inconclusive / SyntaxError / EmptySourceError — never claim DEFECT PROVEN or leak diffs
+        document.getElementById('card-inconclusive-state').classList.remove('hidden');
+        document.getElementById('card-status-badge').innerText = 'INCONCLUSIVE • NO DEFECT';
+        document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap';
+
+        const excType = (result.failing_test && result.failing_test.exception_type) ? result.failing_test.exception_type : 'InvalidTestOrSyntax';
+        const excMsg = (result.failing_test && result.failing_test.exception_message)
+          ? result.failing_test.exception_message
+          : 'Source code could not be parsed or executed cleanly.';
+        document.getElementById('card-inconclusive-title').innerText = `${excType}: ${excMsg}`;
       }
 
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     async function applyVerifiedPatch() {
       if (!currentScenario || !currentAuditResult) return;
 
       if (currentScenario.id === 'CUSTOM') {
-        const patchVal = document.getElementById('custom-patch-input').value;
-        document.getElementById('custom-source-input').value = patchVal;
+        const manualPatch = (document.getElementById('custom-patch-input').value || '').trim();
+        const synthPatch = (currentAuditResult && currentAuditResult.patch && currentAuditResult.patch.patched_code)
+          ? currentAuditResult.patch.patched_code
+          : '';
+        const effectivePatch = manualPatch || synthPatch;
+        if (effectivePatch) {
+          document.getElementById('custom-source-input').value = effectivePatch;
+          document.getElementById('custom-patch-input').value = effectivePatch;
+        }
       } else {
         const srcEl = document.getElementById('pr-source-code');
         srcEl.textContent = currentScenario.patched_code;
-        Prism.highlightElement(srcEl);
+        safeHighlight(srcEl);
       }
 
       document.getElementById('pr-status-badge').innerHTML = `
-        <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span> Immune & Clean (Dual-Suite Verified)
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span> Immune &amp; Clean (Dual-Suite Verified)
       `;
-      document.getElementById('pr-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center gap-1';
+      document.getElementById('pr-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center gap-1 whitespace-nowrap';
 
       document.getElementById('card-proven-defect').classList.add('hidden');
       document.getElementById('card-clean-state').classList.remove('hidden');
       document.getElementById('card-status-badge').innerText = 'VERIFIED IMMUNE';
-      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold';
+      document.getElementById('card-status-badge').className = 'px-2 py-0.5 text-[11px] font-mono rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap';
 
-      let committedPath = currentAuditResult.dual_verification ? currentAuditResult.dual_verification.permanent_test_path : 'tests/regressions/';
+      let committedPath = currentAuditResult.dual_verification
+        ? normalizeRegressionPath(currentAuditResult.dual_verification.permanent_test_path)
+        : 'tests/regressions/test_linus_pr_custom.py';
 
       // Physical disk persistence via backend API
       try {
@@ -631,7 +810,7 @@
           if (commitRes.ok) {
             const commitData = await commitRes.json();
             if (commitData.permanent_test_path) {
-              committedPath = commitData.permanent_test_path;
+              committedPath = normalizeRegressionPath(commitData.permanent_test_path);
             }
           }
         }
@@ -640,15 +819,18 @@
       }
 
       appendTelemetryLog({
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('en-GB', { hour12: false }),
         phase: 'RECURSIVE_TEST_COMMITTED',
         message: `Committed permanent regression guard to disk: ${committedPath}. Codebase is permanently immunized.`
       });
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
-    function copyGithubMarkdown() {
-      if (!currentAuditResult) return;
+    async function copyGithubMarkdown() {
+      if (!currentAuditResult || !currentAuditResult.failing_test) return;
+      const permPath = currentAuditResult.dual_verification
+        ? normalizeRegressionPath(currentAuditResult.dual_verification.permanent_test_path)
+        : 'tests/regressions/';
       const md = `### 🔴 Linus Verification Advisory: Unhandled Defect Caught
 
 Linus ran autonomous adversarial verification on this Pull Request and caught an unhandled runtime crash:
@@ -667,11 +849,27 @@ ${currentAuditResult.failing_test.test_code}
 ${currentAuditResult.patch ? currentAuditResult.patch.diff_patch : ''}
 \`\`\`
 
-*Permanent regression test committed to: \`${currentAuditResult.dual_verification ? currentAuditResult.dual_verification.permanent_test_path : 'tests/regressions/'}\`*
+*Permanent regression test committed to: \`${permPath}\`*
 *Verified with 0 regressions against existing test suite.*`;
 
-      navigator.clipboard.writeText(md);
-      alert('GitHub PR Review Markdown copied to clipboard!');
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(md);
+        }
+      } catch (err) {
+        console.warn('Clipboard write fallback:', err);
+      }
+
+      const labelEl = document.getElementById('btn-copy-markdown-label');
+      const btnEl = document.getElementById('btn-copy-markdown');
+      if (labelEl && btnEl) {
+        labelEl.textContent = 'Copied to Clipboard!';
+        btnEl.classList.add('text-emerald-300', 'border-emerald-500/40');
+        setTimeout(() => {
+          labelEl.textContent = 'Copy PR Review';
+          btnEl.classList.remove('text-emerald-300', 'border-emerald-500/40');
+        }, 2500);
+      }
     }
 
     function downloadPermanentTestFile() {
@@ -680,7 +878,8 @@ ${currentAuditResult.patch ? currentAuditResult.patch.diff_patch : ''}
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `test_linus_${currentScenario.id.toLowerCase().replace('-', '_')}.py`;
+      const rawId = (currentAuditResult.pr_id || currentScenario.id || 'custom').replace(/^pr[-_]/i, '').toLowerCase().replace('-', '_');
+      a.download = `test_linus_pr_${rawId}.py`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -689,7 +888,7 @@ ${currentAuditResult.patch ? currentAuditResult.patch.diff_patch : ''}
 
     // Initialize on page load
     window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
+      safeCreateIcons();
       loadScenarios();
     });
   </script>

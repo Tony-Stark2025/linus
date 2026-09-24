@@ -8,7 +8,9 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import tempfile
+import time
 import uuid
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -106,6 +108,18 @@ async def get_scenarios():
     return summary
 
 
+def _normalize_regression_text(text: str) -> str:
+    """Eliminates redundant `test_linus_pr_PR-104.py` prefixes in paths and messages."""
+    if not text:
+        return text
+    return re.sub(
+        r"test_linus_pr_pr[-_]([A-Za-z0-9_-]+)",
+        lambda m: f"test_linus_pr_{m.group(1).lower().replace('-', '_')}",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+
 @app.post("/api/audit")
 async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
     """Starts an autonomous Linus audit and returns an audit_id for telemetry streaming."""
@@ -142,6 +156,10 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
     main_loop = asyncio.get_running_loop()
 
     def telemetry_callback(event: Dict[str, Any]):
+        if "message" in event and isinstance(event["message"], str):
+            event["message"] = _normalize_regression_text(event["message"])
+        if isinstance(event.get("data"), dict) and isinstance(event["data"].get("permanent_test_path"), str):
+            event["data"]["permanent_test_path"] = _normalize_regression_text(event["data"]["permanent_test_path"]).lower()
         # Schedule message put into the async queue safely from worker thread
         try:
             main_loop.call_soon_threadsafe(queue.put_nowait, event)
@@ -160,9 +178,24 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
             candidate_patch=patch,
             patch_explanation=expl,
         )
-        _persist_audit_result(audit_id, result.model_dump())
+        res_dict = result.model_dump()
+        if isinstance(res_dict.get("dual_verification"), dict) and res_dict["dual_verification"].get("permanent_test_path"):
+            res_dict["dual_verification"]["permanent_test_path"] = _normalize_regression_text(
+                res_dict["dual_verification"]["permanent_test_path"]
+            ).lower()
+        for evt in res_dict.get("telemetry_trace", []):
+            if isinstance(evt.get("message"), str):
+                evt["message"] = _normalize_regression_text(evt["message"])
+            if isinstance(evt.get("data"), dict) and isinstance(evt["data"].get("permanent_test_path"), str):
+                evt["data"]["permanent_test_path"] = _normalize_regression_text(evt["data"]["permanent_test_path"]).lower()
+        _persist_audit_result(audit_id, res_dict)
         evict_old_cache()
-        telemetry_callback({"phase": "TERMINATE", "message": "Audit completed.", "data": {"audit_id": audit_id}})
+        telemetry_callback({
+            "timestamp": time.strftime("%H:%M:%S"),
+            "phase": "TERMINATE",
+            "message": "Audit completed.",
+            "data": {"audit_id": audit_id},
+        })
 
     await asyncio.to_thread(run_agent_job)
     return {
@@ -179,11 +212,11 @@ async def download_regression_test(audit_id: str):
     if res:
         if res.get("failing_test") and res["failing_test"].get("test_code"):
             test_content = res["failing_test"]["test_code"]
-            pr_id = res.get("pr_id", "pr").replace("-", "_").lower()
+            raw_pr = re.sub(r"^pr[-_]", "", str(res.get("pr_id", "custom")), flags=re.IGNORECASE).replace("-", "_").lower()
             return Response(
                 content=test_content,
                 media_type="text/x-python",
-                headers={"Content-Disposition": f"attachment; filename=test_linus_{pr_id}.py"},
+                headers={"Content-Disposition": f"attachment; filename=test_linus_pr_{raw_pr}.py"},
             )
     return JSONResponse(status_code=404, content={"error": "Test not found for audit"})
 
@@ -213,8 +246,10 @@ async def commit_patch_and_test(req: CommitPatchRequest):
 
     perm_path = dual_ver.get("permanent_test_path") if dual_ver else None
     if not perm_path:
-        pr_id = audit_data.get("pr_id", "custom").replace("-", "_").lower()
-        perm_path = f"tests/regressions/test_linus_pr_{pr_id}.py"
+        raw_pr = re.sub(r"^pr[-_]", "", str(audit_data.get("pr_id", "custom")), flags=re.IGNORECASE).replace("-", "_").lower()
+        perm_path = f"tests/regressions/test_linus_pr_{raw_pr}.py"
+    else:
+        perm_path = _normalize_regression_text(perm_path).lower()
 
     workspace_root = BASE_DIR.parent
     if not os.access(workspace_root, os.W_OK):
@@ -243,7 +278,12 @@ async def stream_telemetry(audit_id: str):
             async def replay_generator():
                 for evt in persisted.get("telemetry_trace", []):
                     yield f"data: {json.dumps(evt)}\n\n"
-                yield f"data: {json.dumps({'phase': 'TERMINATE', 'message': 'Audit completed.'})}\n\n"
+                term_evt = {
+                    "timestamp": time.strftime("%H:%M:%S"),
+                    "phase": "TERMINATE",
+                    "message": "Audit completed.",
+                }
+                yield f"data: {json.dumps(term_evt)}\n\n"
             return StreamingResponse(replay_generator(), media_type="text/event-stream")
         return JSONResponse(status_code=404, content={"error": "Audit stream not found"})
 

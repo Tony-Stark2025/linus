@@ -49,10 +49,14 @@ class BoundarySynthesizer:
         """Determines whether a parameter is likely an object/dict subject to NoneType dereference."""
         p_lower = param.name.lower()
         ann = (param.type_annotation or "").lower()
-        if "optional" in ann or "none" in ann or "dict" in ann or "any" in ann:
+        if "optional" in ann or "none" in ann or "any" in ann:
             return True
-        if ann in ("int", "float", "bool"):
+        if ann in ("int", "float", "bool", "str", "bytes", "list", "tuple", "set") or (
+            ann.startswith(("list[", "tuple[", "set["))
+        ):
             return False
+        if "dict" in ann:
+            return True
         nullable_keywords = (
             "user", "account", "profile", "customer", "session", "config",
             "record", "data", "client", "promo", "discount", "payload", "entity", "obj", "item"
@@ -303,7 +307,10 @@ def test_ambient_fallback_linus():
 
             if not risk_types:
                 hypotheses.append(f"Smoke test on '{fn_name}' with minimal arguments.")
-                test_args = ["None" for _ in call_params]
+                test_args = [
+                    self._default_init_arg(p)
+                    for p in call_params
+                ]
                 args_str = self._format_call_args(call_params, test_args)
                 call_expr = self._build_call_expr(fn, args_str)
                 t_name = unique_test_name("test_smoke_boundary_linus", fn_name)
