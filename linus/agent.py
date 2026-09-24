@@ -5,6 +5,8 @@ Coordinates AST inspection, adversarial hypothesis formulation, isolated sandbox
 dual regression verification, and recursive test addition.
 """
 
+import os
+import re
 import time
 import json
 from typing import Dict, Any, List, Optional, Callable
@@ -60,6 +62,33 @@ def execute_sandbox_test(
 
 
 @tool
+def synthesize_defensive_patch_tool(
+    source_code: str,
+    file_path: str = "service.py",
+    exception_type: str = "Exception",
+    exception_line: int = 1,
+) -> str:
+    """
+    Autonomously synthesizes a defensive AST patch guarding against a proven boundary crash.
+    """
+    ast_summary = inspect_source_ast(source_code, file_path=file_path)
+    synthesizer = BoundarySynthesizer()
+    failing_stub = TestExecutionResult(
+        status=TestStatus.UNCAUGHT_EXCEPTION,
+        exit_code=1,
+        test_code="",
+        exception_type=exception_type,
+        exception_line=exception_line,
+    )
+    patched_code, explanation = synthesizer.synthesize_defensive_patch(
+        source_code=source_code,
+        ast_summary=ast_summary,
+        failing_test=failing_stub,
+    )
+    return json.dumps({"patched_code": patched_code, "explanation": explanation})
+
+
+@tool
 def verify_patch_and_immunize(
     original_code: str,
     patched_code: str,
@@ -100,12 +129,18 @@ class LinusAgent:
         dual_verifier: Optional[DualRegressionVerifier] = None,
         boundary_synthesizer: Optional[BoundarySynthesizer] = None,
         telemetry_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+        use_bedrock_llm: Optional[bool] = None,
     ):
         self.sandbox = sandbox_runner or SandboxTestRunner()
         self.verifier = dual_verifier or DualRegressionVerifier(self.sandbox)
         self.synthesizer = boundary_synthesizer or BoundarySynthesizer()
         self.telemetry_callback = telemetry_callback
         self.telemetry_history: List[Dict[str, Any]] = []
+        self.use_bedrock_llm = (
+            use_bedrock_llm
+            if use_bedrock_llm is not None
+            else (os.environ.get("LINUS_ENABLE_BEDROCK_LLM") == "1")
+        )
 
         # Initialize official Strands Agent with registered @tool functions
         self.strands_agent = Agent(
@@ -113,6 +148,7 @@ class LinusAgent:
             tools=[
                 inspect_code_ast,
                 execute_sandbox_test,
+                synthesize_defensive_patch_tool,
                 verify_patch_and_immunize,
             ],
             system_prompt=(
@@ -138,6 +174,29 @@ class LinusAgent:
             except Exception:
                 pass
 
+    def _invoke_strands_llm_code(self, prompt: str) -> Optional[str]:
+        """
+        Invokes the underlying Strands Agent (`self.strands_agent(prompt)`) when Bedrock LLM
+        execution is enabled and extracts a fenced Python code block from the response.
+        Gracefully returns None if offline or if credentials are not configured.
+        """
+        if not self.use_bedrock_llm:
+            return None
+        try:
+            self._emit("STRANDS_LLM_REASONING", "Invoking Strands Agent loop with Amazon Bedrock foundation model...")
+            response = self.strands_agent(prompt)
+            resp_text = str(response)
+            code_match = re.search(r"```(?:python)?\s*\n(.*?)```", resp_text, re.DOTALL)
+            if code_match:
+                return code_match.group(1).strip() + "\n"
+            return None
+        except Exception as exc:
+            self._emit(
+                "STRANDS_LLM_FALLBACK",
+                f"Bedrock LLM unavailable ({type(exc).__name__}); using deterministic AST synthesizer.",
+            )
+            return None
+
     def audit_pull_request(
         self,
         pr_id: str,
@@ -152,10 +211,10 @@ class LinusAgent:
         """
         Executes an autonomous adversarial verification cycle:
         1. Ingress & AST inspection (via Strands inspect_code_ast tool)
-        2. Boundary Hypothesis Formulation / Synthesis
+        2. Boundary Hypothesis Formulation / Synthesis (via Strands LLM or deterministic BoundarySynthesizer)
         3. Sandbox Adversarial Execution (via Strands execute_sandbox_test tool)
         4. Assured Execution Gate
-        5. Patch Synthesis & Dual-Suite Verification (via Strands verify_patch_and_immunize tool)
+        5. Autonomous Patch Synthesis & Dual-Suite Verification (via Strands synthesize_defensive_patch_tool & verify_patch_and_immunize)
         6. Recursive Test Addition
         """
         start_time = time.time()
@@ -179,7 +238,6 @@ class LinusAgent:
             ast_data = json.loads(ast_tool_res["content"][0]["text"])
             ast_result = ASTAnalysisResult.model_validate(ast_data)
         else:
-            # Direct fallback if needed
             ast_result = inspect_source_ast(source_code, file_path=target_filename)
 
         flagged_risks = []
@@ -197,10 +255,18 @@ class LinusAgent:
         actual_test_code = adversarial_test_code
         if not actual_test_code:
             self._emit("HYPOTHESIS_SYNTHESIS", "No pre-scripted test provided. Autonomous boundary synthesizer formulating adversarial test...")
-            actual_test_code, hypothesis = self.synthesizer.synthesize_boundary_test(
-                ast_summary=ast_result,
-                source_filename=target_filename,
+            llm_test = self._invoke_strands_llm_code(
+                f"Synthesize a minimal pytest boundary test for module `{target_filename}` against these AST risks: {flagged_risks}.\n"
+                f"Source code:\n```python\n{source_code}\n```"
             )
+            if llm_test:
+                actual_test_code = llm_test
+                hypothesis = f"Strands LLM synthesized adversarial boundary suite for {target_filename}."
+            else:
+                actual_test_code, hypothesis = self.synthesizer.synthesize_boundary_test(
+                    ast_summary=ast_result,
+                    source_filename=target_filename,
+                )
             self._emit("HYPOTHESIS_FORMULATED", f"Synthesized boundary hypothesis: {hypothesis}")
 
         # Step 3: Adversarial Sandbox Execution via Strands execute_sandbox_test tool
@@ -264,9 +330,38 @@ class LinusAgent:
                 execution_time_seconds=round(time.time() - start_time, 2),
             )
 
-        # Step 5: Patch Synthesis & Dual-Suite Verification via Strands verify_patch_and_immunize tool
+        # Step 5: Autonomous Patch Synthesis & Dual-Suite Verification
         patch_proposal = None
         dual_result = None
+
+        if not candidate_patch:
+            # Autonomously synthesize a defensive patch via Strands LLM or deterministic AST guard synthesizer
+            llm_patch = self._invoke_strands_llm_code(
+                f"Synthesize a minimal defensive Python patch for `{target_filename}` to fix `{test_result.exception_type}` "
+                f"at line {test_result.exception_line} without breaking existing functionality.\n"
+                f"Source code:\n```python\n{source_code}\n```"
+            )
+            if llm_patch:
+                candidate_patch = llm_patch
+                patch_explanation = patch_explanation or f"Strands LLM defensive patch for {test_result.exception_type}"
+            else:
+                synth_res = self.strands_agent.tool.synthesize_defensive_patch_tool(
+                    source_code=source_code,
+                    file_path=target_filename,
+                    exception_type=test_result.exception_type or "Exception",
+                    exception_line=test_result.exception_line or 1,
+                )
+                if synth_res.get("status") == "success":
+                    synth_data = json.loads(synth_res["content"][0]["text"])
+                    candidate_patch = synth_data.get("patched_code")
+                    patch_explanation = patch_explanation or synth_data.get("explanation")
+                else:
+                    candidate_patch, auto_expl = self.synthesizer.synthesize_defensive_patch(
+                        source_code=source_code,
+                        ast_summary=ast_result,
+                        failing_test=test_result,
+                    )
+                    patch_explanation = patch_explanation or auto_expl
 
         if candidate_patch:
             self._emit("PATCH_SYNTHESIS", "Synthesizing minimal AST patch and unified diff...", {

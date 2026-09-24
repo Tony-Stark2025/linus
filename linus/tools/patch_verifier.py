@@ -5,6 +5,9 @@ existing baseline tests, and commits the regression test permanently.
 """
 
 import difflib
+import os
+import re
+import tempfile
 from pathlib import Path
 from typing import Optional, Dict
 from linus.models import (
@@ -86,13 +89,16 @@ class DualRegressionVerifier:
                     details=f"Patch introduced a regression in baseline test suite: {base_result.exception_type or base_result.status}",
                 )
 
-            # Count passed tests approximately
-            for line in base_result.stdout.splitlines():
-                if "passed" in line:
-                    baseline_count = 1
+            # Extract exact number of passed tests from pytest output (e.g. "2 passed in 0.12s")
+            passed_match = re.search(r"(\d+)\s+passed", base_result.stdout)
+            if passed_match:
+                baseline_count = int(passed_match.group(1))
+            elif "passed" in base_result.stdout:
+                baseline_count = 1
 
         # Step 3: Success! Prepare Recursive Test Addition path
-        perm_path = f"tests/regressions/test_linus_pr_{pr_id}.py"
+        safe_pr_id = re.sub(r"[^A-Za-z0-9_-]", "_", str(pr_id))
+        perm_path = f"tests/regressions/test_linus_pr_{safe_pr_id}.py"
 
         return DualVerificationResult(
             verified=True,
@@ -121,12 +127,28 @@ def commit_permanent_test(
     """
     Physically writes the verified reproduction test to disk (Recursive Test Addition),
     permanently immunizing the repository against regressions.
+    Automatically falls back to `/tmp/linus_regressions` on read-only filesystems (such as AWS Lambda `/app`).
     """
-    root = base_dir or Path.cwd()
-    target_path = root / permanent_test_path
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    target_path.write_text(test_code, encoding="utf-8")
-    return target_path
+    root = (base_dir or Path.cwd()).resolve()
+    # Prevent path traversal outside root
+    rel_parts = [p for p in Path(permanent_test_path).parts if p not in ("/", "\\", "..", ".")]
+    safe_rel_path = Path(*rel_parts) if rel_parts else Path("tests/regressions/test_linus_guard.py")
+
+    if not os.access(root, os.W_OK):
+        root = Path(tempfile.gettempdir()).resolve() / "linus_regressions"
+
+    target_path = (root / safe_rel_path).resolve()
+    try:
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(test_code, encoding="utf-8")
+        return target_path
+    except OSError:
+        # Fallback to /tmp/linus_regressions if container filesystem (/app) is mounted read-only (EROFS)
+        fallback_root = Path(tempfile.gettempdir()).resolve() / "linus_regressions"
+        fallback_target = fallback_root / safe_rel_path
+        fallback_target.parent.mkdir(parents=True, exist_ok=True)
+        fallback_target.write_text(test_code, encoding="utf-8")
+        return fallback_target
 
 
 def verify_patch_dual_suite(

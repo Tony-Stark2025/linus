@@ -20,6 +20,7 @@ class FunctionParameter(BaseModel):
     name: str
     type_annotation: Optional[str] = None
     default_value: Optional[str] = None
+    kind: str = "positional_or_keyword"
 
 
 class FunctionSignature(BaseModel):
@@ -29,6 +30,9 @@ class FunctionSignature(BaseModel):
     return_type: Optional[str] = None
     risk_vectors: List[RiskVectorType] = Field(default_factory=list)
     docstring: Optional[str] = None
+    class_name: Optional[str] = None
+    is_async: bool = False
+    class_init_params: List[FunctionParameter] = Field(default_factory=list)
 
 
 class ASTAnalysisResult(BaseModel):

@@ -4,7 +4,11 @@ Provides real-time SSE telemetry streaming, GitHub webhook ingestion, and scenar
 """
 
 import asyncio
+import hashlib
+import hmac
 import json
+import os
+import tempfile
 import uuid
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -17,7 +21,7 @@ from linus.agent import LinusAgent
 from linus.scenarios import ALL_SCENARIOS, SCENARIO_CHECKOUT_DISCOUNT
 from linus.tools.patch_verifier import commit_permanent_test
 
-app = FastAPI(title="Linus Enterprise SRE Console", version="0.1.0")
+app = FastAPI(title="Linus Enterprise SRE Console", version="0.2.0")
 
 # Active audit telemetry streams {audit_id: asyncio.Queue}
 ACTIVE_STREAMS: Dict[str, asyncio.Queue] = {}
@@ -26,6 +30,34 @@ MAX_CACHED_AUDITS = 50
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+AUDIT_STORE_DIR = Path(tempfile.gettempdir()).resolve() / "linus_audit_store"
+
+
+def _persist_audit_result(audit_id: str, data: Dict[str, Any]):
+    """Persists audit result to /tmp/linus_audit_store so serverless instances can recover state."""
+    AUDIT_RESULTS[audit_id] = data
+    try:
+        safe_id = Path(audit_id).name
+        AUDIT_STORE_DIR.mkdir(parents=True, exist_ok=True)
+        (AUDIT_STORE_DIR / f"{safe_id}.json").write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _get_persisted_audit_result(audit_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieves audit result from memory cache or /tmp/linus_audit_store fallback."""
+    if audit_id in AUDIT_RESULTS:
+        return AUDIT_RESULTS[audit_id]
+    try:
+        safe_id = Path(audit_id).name
+        store_file = AUDIT_STORE_DIR / f"{safe_id}.json"
+        if store_file.exists():
+            data = json.loads(store_file.read_text(encoding="utf-8"))
+            AUDIT_RESULTS[audit_id] = data
+            return data
+    except Exception:
+        pass
+    return None
 
 
 def evict_old_cache():
@@ -95,11 +127,15 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
         pr_id = "PR-CUSTOM"
         repo = "custom/user-repo"
         source = req.custom_source or ""
-        filename = req.custom_filename or "service.py"
+        # Strip any path traversal components from custom_filename (SEC-03)
+        raw_fname = Path(req.custom_filename or "service.py").name or "service.py"
+        if not raw_fname.endswith(".py"):
+            raw_fname = f"{raw_fname}.py"
+        filename = raw_fname
         adv_test = req.custom_test if (req.custom_test and req.custom_test.strip()) else None
         base_test = None
         patch = req.custom_patch
-        expl = "Custom user submitted patch"
+        expl = "Custom user submitted patch" if req.custom_patch else None
 
     main_loop = asyncio.get_running_loop()
 
@@ -122,7 +158,7 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
             candidate_patch=patch,
             patch_explanation=expl,
         )
-        AUDIT_RESULTS[audit_id] = result.model_dump()
+        _persist_audit_result(audit_id, result.model_dump())
         evict_old_cache()
         telemetry_callback({"phase": "TERMINATE", "message": "Audit completed.", "data": {"audit_id": audit_id}})
 
@@ -133,8 +169,8 @@ async def start_audit(req: AuditRequest, background_tasks: BackgroundTasks):
 @app.get("/api/download/test/{audit_id}")
 async def download_regression_test(audit_id: str):
     """Downloads the verified regression test as a standalone .py file."""
-    if audit_id in AUDIT_RESULTS:
-        res = AUDIT_RESULTS[audit_id]
+    res = _get_persisted_audit_result(audit_id)
+    if res:
         if res.get("failing_test") and res["failing_test"].get("test_code"):
             test_content = res["failing_test"]["test_code"]
             pr_id = res.get("pr_id", "pr").replace("-", "_").lower()
@@ -150,12 +186,13 @@ async def download_regression_test(audit_id: str):
 async def commit_patch_and_test(req: CommitPatchRequest):
     """
     Physically commits the permanent regression test to tests/regressions/
+    (or /tmp/linus_regressions on read-only serverless filesystems like AWS Lambda)
     and permanently immunizes the repository.
     """
-    if req.audit_id not in AUDIT_RESULTS:
+    audit_data = _get_persisted_audit_result(req.audit_id)
+    if not audit_data:
         return JSONResponse(status_code=404, content={"error": "Audit result not found."})
 
-    audit_data = AUDIT_RESULTS[req.audit_id]
     dual_ver = audit_data.get("dual_verification")
     failing_test = audit_data.get("failing_test")
 
@@ -168,6 +205,9 @@ async def commit_patch_and_test(req: CommitPatchRequest):
         perm_path = f"tests/regressions/test_linus_pr_{pr_id}.py"
 
     workspace_root = BASE_DIR.parent
+    if not os.access(workspace_root, os.W_OK):
+        workspace_root = Path(tempfile.gettempdir()).resolve() / "linus_regressions"
+
     written_path = commit_permanent_test(
         permanent_test_path=perm_path,
         test_code=failing_test["test_code"],
@@ -186,9 +226,10 @@ async def commit_patch_and_test(req: CommitPatchRequest):
 async def stream_telemetry(audit_id: str):
     """Streams real-time AgentCore telemetry events via Server-Sent Events (SSE)."""
     if audit_id not in ACTIVE_STREAMS:
-        if audit_id in AUDIT_RESULTS:
+        persisted = _get_persisted_audit_result(audit_id)
+        if persisted:
             async def replay_generator():
-                for evt in AUDIT_RESULTS[audit_id].get("telemetry_trace", []):
+                for evt in persisted.get("telemetry_trace", []):
                     yield f"data: {json.dumps(evt)}\n\n"
                 yield f"data: {json.dumps({'phase': 'TERMINATE', 'message': 'Audit completed.'})}\n\n"
             return StreamingResponse(replay_generator(), media_type="text/event-stream")
@@ -216,22 +257,37 @@ async def stream_telemetry(audit_id: str):
 @app.get("/api/audit/result/{audit_id}")
 async def get_audit_result(audit_id: str):
     """Retrieves final audit result for a completed run."""
-    if audit_id in AUDIT_RESULTS:
-        return AUDIT_RESULTS[audit_id]
+    res = _get_persisted_audit_result(audit_id)
+    if res:
+        return res
     return JSONResponse(status_code=404, content={"error": "Audit result not ready"})
 
 
 @app.post("/webhook/github")
 async def github_webhook(request: Request, background_tasks: BackgroundTasks):
-    """Live GitHub Webhook receiver for pull_request events."""
-    payload = await request.json()
+    """Live GitHub Webhook receiver for pull_request events with optional HMAC-SHA256 verification."""
+    raw_body = await request.body()
+    webhook_secret = os.environ.get("GITHUB_WEBHOOK_SECRET")
+    if webhook_secret:
+        sig_header = request.headers.get("X-Hub-Signature-256", "")
+        expected_sig = "sha256=" + hmac.new(
+            webhook_secret.encode("utf-8"),
+            raw_body,
+            hashlib.sha256,
+        ).hexdigest()
+        if not sig_header or not hmac.compare_digest(sig_header, expected_sig):
+            return JSONResponse(
+                status_code=401,
+                content={"error": "Invalid or missing X-Hub-Signature-256 webhook signature."},
+            )
+
+    payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
     action = payload.get("action")
     pr = payload.get("pull_request", {})
     
     if action in ("opened", "synchronize", "reopened"):
         pr_number = pr.get("number", 1)
         repo_name = payload.get("repository", {}).get("full_name", "unknown/repo")
-        # In live enterprise production, clones repo and runs audit
         return {"status": "INGESTED", "pr": pr_number, "repo": repo_name}
         
     return {"status": "IGNORED", "reason": f"Action {action} does not require verification."}

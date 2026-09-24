@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linus-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Linus: Autonomous Adversarial Pull Request Verifier built with Strands Agents SDK & Amazon Bedrock AgentCore"
 readme = "README.md"
 authors = [

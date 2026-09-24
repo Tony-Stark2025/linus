@@ -9,7 +9,7 @@
 [![Strands SDK](https://img.shields.io/badge/Powered%20By-Strands%20Agents%20SDK%20v1.55-0ea5e9?style=for-the-badge)](https://pypi.org/project/strands-agents/)
 [![Bedrock AgentCore](https://img.shields.io/badge/Runtime-Amazon%20Bedrock%20AgentCore-7c3aed?style=for-the-badge&logo=amazonaws)](https://aws.amazon.com/bedrock/)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-268%2F268%20Passing%20(100%25)-success?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-283%2F283%20Passing%20(100%25)-success?style=for-the-badge)](tests/)
 
 <br />
 
@@ -183,7 +183,7 @@ agent:
   name: "linus-adversarial-verifier"
   runtime:
     type: "STRANDS_AGENT_CORE"
-    engine: "python3.14"
+    engine: "python3.12"
     entrypoint: "linus.agent:LinusAgent"
   foundationModel: "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-7-sonnet-20250219-v1:0"
   guardrails:
@@ -192,18 +192,15 @@ agent:
       requireExitCodeNonZero: true
 ```
 
-Deploying to your AWS Environment:
+Deploying to your AWS Environment (Amazon ECR + Serverless Lambda / AgentCore):
 ```bash
 # Set AWS credentials
 export AWS_REGION=us-east-1
 export AWS_ACCESS_KEY_ID=your-key
 export AWS_SECRET_ACCESS_KEY=your-secret
 
-# Deploy AgentCore package via AWS CLI
-aws bedrock-agent create-agent \
-  --agent-name linus-adversarial-verifier \
-  --foundation-model anthropic.claude-3-7-sonnet-20250219-v1:0 \
-  --cli-input-yaml file://agentcore.yaml
+# Build & push container image to Amazon ECR and deploy serverless stack
+python scripts/deploy_aws_serverless.py
 ```
 
 ---

@@ -8,7 +8,6 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: "423716910242"
   ECR_REPOSITORY: "linus-sre-console"
   IMAGE_TAG: latest
   LAMBDA_FUNCTION_NAME: "linus-sre-console"
@@ -68,15 +67,85 @@ jobs:
 
       - name: Deploy / Update Serverless Lambda Function
         run: |
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG"
+          ROLE_NAME="linus-lambda-exec-role"
+          ROLE_ARN="arn:aws:iam::$AWS_ACCOUNT_ID:role/$ROLE_NAME"
           
-          # Check if Lambda function exists
+          # 1. Ensure IAM Execution Role exists
+          echo "Checking IAM execution role: $ROLE_NAME..."
+          if ! aws iam get-role --role-name $ROLE_NAME --region $AWS_REGION >/dev/null 2>&1; then
+            echo "Creating execution role $ROLE_NAME..."
+            aws iam create-role \
+              --role-name $ROLE_NAME \
+              --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+            aws iam attach-role-policy \
+              --role-name $ROLE_NAME \
+              --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+            echo "Waiting 10s for IAM role replication..."
+            sleep 10
+          fi
+
+          # 2. Check if Lambda function exists
           if aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION >/dev/null 2>&1; then
             echo "Updating existing Lambda function code..."
             aws lambda update-function-code \
               --function-name $LAMBDA_FUNCTION_NAME \
               --image-uri $IMAGE_URI \
               --region $AWS_REGION
+            
+            echo "Waiting for function update to complete..."
+            aws lambda wait function-updated-v2 --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || \
+            aws lambda wait function-updated --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || sleep 10
           else
-            echo "Lambda function does not exist yet. Please create it once in the AWS Console with image URI: $IMAGE_URI"
+            echo "Creating new Lambda function $LAMBDA_FUNCTION_NAME..."
+            aws lambda create-function \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --package-type Image \
+              --code ImageUri=$IMAGE_URI \
+              --role $ROLE_ARN \
+              --timeout 180 \
+              --memory-size 2048 \
+              --environment "Variables={AWS_LWA_INVOKE_MODE=response_stream,AWS_BEDROCK_REGION=$AWS_REGION}" \
+              --region $AWS_REGION
+
+            echo "Waiting for Lambda function to become active..."
+            aws lambda wait function-active-v2 --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || \
+            aws lambda wait function-active --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>/dev/null || sleep 15
           fi
+
+          # 3. Ensure Function URL exists
+          if ! aws lambda get-function-url-config --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION >/dev/null 2>&1; then
+            echo "Creating Lambda Function URL with RESPONSE_STREAM..."
+            aws lambda create-function-url-config \
+              --function-name $LAMBDA_FUNCTION_NAME \
+              --auth-type NONE \
+              --invoke-mode RESPONSE_STREAM \
+              --cors '{"AllowOrigins":["*"],"AllowMethods":["*"],"AllowHeaders":["*"]}' \
+              --region $AWS_REGION
+          fi
+
+          # 4. Configure public permissions (both InvokeFunctionUrl and InvokeFunction)
+          echo "Configuring public access permissions for Function URL..."
+          aws lambda add-permission \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --action lambda:InvokeFunctionUrl \
+            --statement-id FunctionURLAllowPublicAccess \
+            --principal "*" \
+            --function-url-auth-type NONE \
+            --region $AWS_REGION 2>/dev/null || true
+
+          aws lambda add-permission \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --action lambda:InvokeFunction \
+            --statement-id FunctionURLAllowPublicInvoke \
+            --principal "*" \
+            --invoked-via-function-url \
+            --region $AWS_REGION 2>/dev/null || true
+
+          # 5. Print the live Function URL
+          URL=$(aws lambda get-function-url-config --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION --query 'FunctionUrl' --output text 2>/dev/null || echo "Pending")
+          echo ""
+          echo "=========================================================="
+          echo "🚀 Linus SRE Console is live at: $URL"
+          echo "=========================================================="

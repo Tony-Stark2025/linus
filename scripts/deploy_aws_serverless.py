@@ -1,6 +1,6 @@
 """
 Automated AWS Serverless Deployment Script for Linus.
-Builds and pushes the container image to Amazon ECR for AWS Account 423716910242.
+Builds and pushes the container image to Amazon ECR using caller STS identity or AWS_ACCOUNT_ID.
 """
 
 import sys
@@ -9,7 +9,20 @@ import subprocess
 import base64
 from pathlib import Path
 
-AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID", "423716910242")
+
+def _resolve_aws_account_id() -> str:
+    env_id = os.environ.get("AWS_ACCOUNT_ID", "").strip()
+    if env_id:
+        return env_id
+    try:
+        import boto3
+        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+        return sts.get_caller_identity()["Account"]
+    except Exception:
+        return "<YOUR_AWS_ACCOUNT_ID>"
+
+
+AWS_ACCOUNT_ID = _resolve_aws_account_id()
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 REPO_NAME = "linus-sre-console"
 IMAGE_TAG = "latest"

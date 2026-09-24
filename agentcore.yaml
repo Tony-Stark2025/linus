@@ -19,7 +19,7 @@ agent:
   
   runtime:
     type: "STRANDS_AGENT_CORE"
-    engine: "python3.14"
+    engine: "python3.12"
     entrypoint: "linus.agent:LinusAgent"
     handler: "audit_pull_request"
     timeoutSeconds: 180

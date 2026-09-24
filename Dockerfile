@@ -33,6 +33,13 @@ COPY README.md .
 # Install Python dependencies and linus package
 RUN pip install --no-cache-dir -e .
 
+# Create non-root execution user and writable temporary directories for sandbox & regressions (SEC-01)
+RUN useradd -m -u 1000 -s /bin/bash linus \
+    && mkdir -p /tmp/linus_regressions /tmp/linus_audit_store /app/tests/regressions \
+    && chown -R linus:linus /app /tmp/linus_regressions /tmp/linus_audit_store
+
+USER linus
+
 # Expose web console port
 EXPOSE 8000
 
